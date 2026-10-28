@@ -1,0 +1,6 @@
+plans
+output
+.playwright-cli
+**/*.test.ts
+docs
+.env.example

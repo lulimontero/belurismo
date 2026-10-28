@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Belurismo · Turi
 
-## Getting Started
+Landing de belo Travel y asistente de viaje con chat, voz OpenAI Realtime por WebRTC, adjuntos, itinerario, presupuesto y gastos compartidos.
 
-First, run the development server:
+Web: https://belurismo.vercel.app
 
-```bash
+## Desarrollo
+
+```powershell
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copiar las variables necesarias desde `.env.example` a `.env.local`. No subir claves a GitHub. Para chat y voz, agregar `OPENAI_API_KEY`; las demás conexiones se activan por separado.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verificación
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```powershell
+npm test
+npm run lint
+npm run build
+```
 
-## Learn More
+## Conexiones
 
-To learn more about Next.js, take a look at the following resources:
+Telegram, Gmail, Google Calendar y Google Drive tienen flujos de integración preparados y permisos por función. El MCP de Belo está pendiente de documentación y acceso. La interfaz muestra qué servicios están configurados y cuáles faltan.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+La guía completa de activación, variables, permisos, límites y capacidades pendientes está en [docs/turi-setup.md](docs/turi-setup.md).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+GitHub `main` está conectado a Vercel para despliegue automático.
