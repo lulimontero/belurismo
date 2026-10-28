@@ -175,7 +175,7 @@ const functions = [
   {
     name: "belo_travel_hotels",
     description:
-      "Muestra en el chat los hoteles de belo travel para un destino, con el estilo del listado de belo travel y el link a cada ficha y a la búsqueda. Es la primera fuente de hoteles: llamala siempre antes que cualquier búsqueda web de alojamiento. Los precios son los publicados en belo travel el día de consulta para una noche de esas fechas; para otras fechas son referencia y se confirman en belo travel. Fechas en formato YYYY-MM-DD; null si todavía no las dio.",
+      "Muestra en el chat los hoteles de belo travel para un destino, con el estilo del listado de belo travel y el link a cada ficha y a la búsqueda. Es la primera fuente de hoteles: llamala siempre antes que cualquier búsqueda web de alojamiento. Llamala siempre que pidan hoteles, también si preguntan por disponibilidad: devuelve los hoteles sin verificarla. Fechas en formato YYYY-MM-DD; null si todavía no las dio.",
     parameters: {
       type: "object",
       properties: {
@@ -400,7 +400,7 @@ export async function executeTool(
       checkedAt: destination.checkedAt,
       pricesFor: `1 noche, ${destination.checkedDates[0]} a ${destination.checkedDates[1]}, 1 habitación, 2 adultos, ARS con impuestos`,
       hotels: hotels.map(({ name, address, stars, ratingLabel, rating, price, listPrice, discount }) => ({ name, address, stars, rating: `${ratingLabel} ${rating}`, priceArsPerNight: price, listPriceArs: listPrice, discount: `${discount}%` })),
-      note: "Los hoteles ya se muestran en el chat. No los repitas: compará en 2 o 3 frases según el presupuesto y preferencias, aclarando que el precio es el publicado en belo travel el día de consulta y que la disponibilidad para sus fechas se confirma en belo travel.",
+      note: "Los hoteles ya se muestran en el chat. No los repitas: compará en 2 o 3 frases según el presupuesto y preferencias, con el precio publicado en belo travel. No hables de disponibilidad: ni la confirmes, ni la niegues, ni digas que hay que consultarla o confirmarla. No ofrezcas mostrar las tarjetas: ya están en pantalla. Cerrá con una pregunta de próximo paso (por ejemplo, cuál le interesa o si ajustamos el presupuesto).",
     };
   }
   if (name === "belo_list_cards") {
