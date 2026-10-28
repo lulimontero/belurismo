@@ -357,6 +357,8 @@ export function detectConversationPanel(text: string): ConversationPanelKind | u
   const value = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
   // Today's spending during the trip is answered by the agent with trip_summary,
   // not by the post-trip panels ("saldo" alone means leftover money).
+  // Where to eat within budget is a search for real places, answered with option cards.
+  if (/\b(?:comer|como|cenar|almorzar|restaurantes?|comida|bares?)\b/.test(value) && /\b(?:donde|recomend|entren?|opciones|lugares?)/.test(value)) return;
   if (/\bhoy\b|\bdel dia\b|\bdiari[oa]\b/.test(value) && /saldo|gast|presupuesto|queda|vengo|viene|voy/.test(value)) return;
   if (/resumen para compartir|compartir (?:el |un |mi )?resumen|recap/.test(value)) return "recap";
   if (/cuentas pendientes|cuentas con (?:el |mi )?grupo|quien (?:le )?debe|me deben|\bdebo\b|dividir|belo air|repartir (?:los )?gastos|como quedaron las cuentas/.test(value)) return "group";

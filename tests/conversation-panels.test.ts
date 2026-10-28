@@ -189,7 +189,7 @@ test("panel intents follow the reference scenarios with accent-insensitive, prec
   ] as const;
   for (const [text, panel] of cases) assert.equal(detectConversationPanel(text), panel, text);
   assert.equal(detectConversationPanel("Hola, Turi"), undefined);
-  for (const text of ["como viene mi saldo de hoy?", "¿Cuánto gasté hoy?", "¿Cómo vengo con el presupuesto diario?", "¿Cuánto me queda para hoy?"])
+  for (const text of ["¿Dónde como según mi presupuesto?", "restaurantes que entren en mi presupuesto", "como viene mi saldo de hoy?", "¿Cuánto gasté hoy?", "¿Cómo vengo con el presupuesto diario?", "¿Cuánto me queda para hoy?"])
     assert.equal(detectConversationPanel(text), undefined, text);
   assert.equal(detectConversationPanel("Buscá hoteles frente al mar"), undefined);
 });
