@@ -733,6 +733,24 @@ html:has(.turi-dialog[open]) {
   margin-top: 1px;
   --turi-mint: var(--turi-mint-bright);
 }
+/* Mientras Turi piensa: salto, giro de 360° y dos saltitos. */
+.turi-message-avatar.is-thinking {
+  animation: turi-think 2.2s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+}
+@keyframes turi-think {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+  10% { transform: translateY(-9px) rotate(0deg); }
+  20% { transform: translateY(0) rotate(0deg); }
+  48% { transform: translateY(0) rotate(360deg); }
+  58% { transform: translateY(-6px) rotate(360deg); }
+  66% { transform: translateY(0) rotate(360deg); }
+  76% { transform: translateY(-6px) rotate(360deg); }
+  84% { transform: translateY(0) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .turi-message-avatar.is-thinking { animation: none; }
+}
 .turi-message-content {
   min-width: 0;
   overflow-wrap: anywhere;

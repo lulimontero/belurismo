@@ -242,13 +242,13 @@ export default function ChatView({
             role="log"
             aria-label="Mensajes de la conversación"
           >
-            {turi.messages.map((message) => (
+            {turi.messages.map((message, index) => (
               <article
                 key={message.id}
                 className={`turi-message ${message.role}${message.options?.length || message.widgets?.length ? " has-options" : ""}`}
               >
                 {message.role === "assistant" && (
-                  <span className="turi-message-avatar">
+                  <span className={`turi-message-avatar${turi.busy && index === turi.messages.length - 1 ? " is-thinking" : ""}`}>
                     <TuriMark size={19} />
                   </span>
                 )}
