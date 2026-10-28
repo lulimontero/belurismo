@@ -22,11 +22,14 @@ export type PlanningContext = {
   budget?: number;
   budgetScope?: "night" | "total";
   budgetAudience?: "group" | "person";
+  /** The year was inferred, so the dates picker shows them prefilled to confirm. */
+  datesToConfirm?: boolean;
 };
 export type PlanningResult = PlanningContext & { step: PlanningStep };
 type HistoryMessage = { role: "user" | "assistant"; text: string };
 type ParsedRequest = PlanningContext & {
   datesMentioned?: boolean;
+  yearInferred?: boolean;
   accommodationBudget?: boolean;
 };
 
@@ -44,6 +47,7 @@ const OTHER_TOPIC = /\b(?:comer|restaurantes?|almorzar|cenar|actividades?|playas
 const EXPLICIT_LODGING = /(?:busc(?:o|ar|ame)|quiero|necesito|compar(?:ar|[aá])|mostr(?:ame|[aá])|recomend(?:ame|[aá])|opciones?\s+de|cambiar)\b[^.!?\n]{0,70}\b(?:hotel(?:es)?|alojamiento|hospedaje|habitaci[oó]n(?:es)?|pousadas?|hostel)\b/i;
 const NEW_TRIP = /\b(?:quiero|queremos|vamos a|necesito|organizar|armar|planear|planificar|empezar|organicemos|armemos)\s+(?:(?:organizar|armar|planear|planificar|empezar)\s+)?(?:(?:un|el)\s+)?(?:otro|nuevo)\s+viaje\b/i;
 const KEEP_DATES = /\b(?:mismas fechas|conservar (?:las )?fechas|mantener (?:las )?fechas|manten[eé](?:mos)? (?:las )?fechas|sin cambiar (?:las )?fechas)\b/i;
+const CONFIRM = /^\s*(?:s[ií]|dale|ok|okay|perfecto|confirmo|confirmadas?|correcto|esas? (?:fechas|son))(?!\p{L})/iu;
 const CHANGE_DATES = /\b(?:otras fechas|fechas diferentes|no\b[^.!?;\n]{0,25}(?:mismas fechas|mantener (?:las )?fechas|conservar (?:las )?fechas))\b/i;
 
 function accommodationIntent(text: string) {
@@ -104,11 +108,30 @@ export function formatRange(from: string, to: string) {
   return { label, nights };
 }
 
-function dateRangeFrom(text: string): Pick<ParsedRequest, "startDate" | "endDate" | "nights" | "datesMentioned"> {
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+/** Without a year, a trip is the next occurrence of those dates. */
+function nextOccurrence(today: string, startDay: number, startMonth: number, endDay: number, endMonth: number) {
+  const thisYear = +today.slice(0, 4);
+  const startYear = (isoDate(thisYear, startMonth, startDay) ?? "") >= today ? thisYear : thisYear + 1;
+  return [
+    isoDate(startYear, startMonth, startDay),
+    isoDate(endMonth < startMonth ? startYear + 1 : startYear, endMonth, endDay),
+  ];
+}
+
+function dateRangeFrom(text: string, today = todayIso()): Pick<ParsedRequest, "startDate" | "endDate" | "nights" | "datesMentioned" | "yearInferred"> {
   const rawIso = text.match(/\b(\d{4}-\d{2}-\d{2})\s*(?:a|al|hasta|→|—|–)\s*(\d{4}-\d{2}-\d{2})\b/i);
   const numeric = text.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(?:a|al|hasta|→|—|–)\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\b/i);
   const sameMonth = text.match(/\b(\d{1,2})\s*(?:al|a|hasta)\s*(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+(?:de\s+)?(\d{4})\b/i);
   const mixedMonths = text.match(/\b(\d{1,2})\s+de\s+([a-záéíóúñ]+)(?:\s+(?:de\s+)?(\d{4}))?\s*(?:al|a|hasta)\s*(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+(?:de\s+)?(\d{4})\b/i);
+  const month = `(${MONTHS.join("|")})`;
+  const notCount = String.raw`(?!\s*(?:adult|menor|niñ|person|noche|d[ií]a|hu[eé]sped))`;
+  const yearless = [...text.matchAll(new RegExp(
+    String.raw`\b(\d{1,2})(?:\s+de\s+${month})?\s*(?:al|a|hasta(?:\s+el)?|y(?:\s+el)?|-|–|—)\s*(\d{1,2})\b${notCount}(?:\s+de\s+${month})?`, "gi"))]
+    .find((match) => match[2] || match[4]);
+  const numericYearless = text.match(/\b(\d{1,2})\/(\d{1,2})\s*(?:al|a|hasta|→|—|–|-)\s*(\d{1,2})\/(\d{1,2})\b(?!\/)/i);
   let startDate: string | undefined, endDate: string | undefined;
   if (rawIso) [startDate, endDate] = [rawIso[1], rawIso[2]];
   else if (numeric) {
@@ -127,11 +150,22 @@ function dateRangeFrom(text: string): Pick<ParsedRequest, "startDate" | "endDate
     const startYear = mixedMonths[3] ? +mixedMonths[3] : startMonth <= endMonth ? endYear : undefined;
     if (startYear) startDate = isoDate(startYear, startMonth, +mixedMonths[1]);
     endDate = isoDate(endYear, endMonth, +mixedMonths[4]);
+  } else if (yearless) {
+    const startMonth = MONTHS.indexOf((yearless[2] ?? yearless[4]).toLowerCase()) + 1;
+    const startDay = +yearless[1], endDay = +yearless[3];
+    // "del 2 de diciembre al 7" keeps the month; "del 28 de diciembre al 3" rolls over.
+    const endMonth = yearless[4] ? MONTHS.indexOf(yearless[4].toLowerCase()) + 1
+      : endDay > startDay ? startMonth : startMonth % 12 + 1;
+    [startDate, endDate] = nextOccurrence(today, startDay, startMonth, endDay, endMonth);
+  } else if (numericYearless) {
+    const [startDay, startMonth, endDay, endMonth] = numericYearless.slice(1).map(Number);
+    [startDate, endDate] = nextOccurrence(today, startDay, startMonth, endDay, endMonth);
   }
-  const datesMentioned = Boolean(rawIso || numeric || sameMonth || mixedMonths ||
+  const datesMentioned = Boolean(rawIso || numeric || sameMonth || mixedMonths || yearless || numericYearless ||
     /\bfechas?\s*:|\b\d{1,2}\s*(?:al|a|hasta)\s*\d{1,2}\s+de\s|\b(?:del?|desde|entre)\s+\d{1,2}\s+de\s/i.test(text));
   const nights = startDate && endDate ? nightsOf(startDate, endDate) : undefined;
-  return nights ? { startDate, endDate, nights, datesMentioned } : { datesMentioned };
+  if (!nights) return { datesMentioned };
+  return { startDate, endDate, nights, datesMentioned, ...(!rawIso && !numeric && !sameMonth && !mixedMonths ? { yearInferred: true } : {}) };
 }
 
 function occupantsFrom(text: string): Pick<PlanningContext, "adults" | "children"> {
@@ -216,10 +250,10 @@ function budgetFrom(text: string, allowFollowup: boolean): ParsedRequest {
   };
 }
 
-export function parseHotelRequest(text: string): ParsedRequest {
+export function parseHotelRequest(text: string, today?: string): ParsedRequest {
   return {
     ...(destinationFrom(text) ? { destination: destinationFrom(text) } : {}),
-    ...dateRangeFrom(text),
+    ...dateRangeFrom(text, today),
     ...occupantsFrom(text),
     ...(agesFrom(text, false) ? { ages: agesFrom(text, false) } : {}),
     ...budgetFrom(text, false),
@@ -228,7 +262,7 @@ export function parseHotelRequest(text: string): ParsedRequest {
 
 export function nextQuestion(context: PlanningContext): PlanningStep {
   if (!context.destination) return "destination";
-  if (!context.startDate || !context.endDate || !nightsOf(context.startDate, context.endDate)) return "dates";
+  if (!context.startDate || !context.endDate || !nightsOf(context.startDate, context.endDate) || context.datesToConfirm) return "dates";
   if (!context.adults || context.children === undefined || context.adults + context.children > 50) return "travelers";
   if (context.children && (!context.ages?.length ||
     (!context.ages.some((age) => age.includes("–")) && context.ages.length < context.children))) return "ages";
@@ -249,7 +283,7 @@ export function budgetOptions(nights: number, currency = "ARS", caps: readonly n
   }));
 }
 
-export function planningStepFor(messages: readonly HistoryMessage[], workspace: Workspace): PlanningResult | undefined {
+export function planningStepFor(messages: readonly HistoryMessage[], workspace: Workspace, today?: string): PlanningResult | undefined {
   const users = messages.filter((message) => message.role === "user");
   const latest = users.at(-1)?.text ?? "";
   if (!users.some((message) => accommodationIntent(message.text))) return;
@@ -279,7 +313,7 @@ export function planningStepFor(messages: readonly HistoryMessage[], workspace: 
       Object.assign(context, retained);
     }
     const stepBefore = nextQuestion(context);
-    const parsed = parseHotelRequest(message.text);
+    const parsed = parseHotelRequest(message.text, today);
     const destination = parsed.destination ?? destinationFrom(message.text, stepBefore === "destination");
     if (destination) {
       const comparable = (value: string) => (normalizedDestination(value) ?? value)
@@ -296,9 +330,12 @@ export function planningStepFor(messages: readonly HistoryMessage[], workspace: 
       delete context.startDate;
       delete context.endDate;
       delete context.nights;
+      delete context.datesToConfirm;
     }
-    if (parsed.startDate && parsed.endDate && parsed.nights)
+    if (parsed.startDate && parsed.endDate && parsed.nights) {
       Object.assign(context, { startDate: parsed.startDate, endDate: parsed.endDate, nights: parsed.nights });
+      if (parsed.yearInferred) context.datesToConfirm = true;
+    } else if (stepBefore === "dates" && context.datesToConfirm && CONFIRM.test(message.text)) delete context.datesToConfirm;
     if (parsed.children !== undefined && parsed.children !== context.children) delete context.ages;
     if (parsed.adults !== undefined) context.adults = parsed.adults;
     if (parsed.children !== undefined) context.children = parsed.children;

@@ -66,13 +66,35 @@ test("viajar a un destino concreto abre fechas; elegir ideas todavía pasa al ag
   assert.equal(planningStepFor(users("Quiero organizar un viaje. Ayudame a elegir destino"), emptyWorkspace()), undefined);
 });
 
-test("fechas sin año o imposibles siguen en fechas, sin inventar el año", () => {
+test("fechas imposibles siguen en fechas", () => {
   for (const text of [
-    "Quiero hotel en Roma del 5 al 10 de enero",
     "Quiero hotel en Roma del 30 al 31 de febrero de 2027",
     "Quiero hotel en Roma. Fechas: 2027-01-10 a 2027-01-05",
     "Quiero hotel en Roma. Fechas: 2027-02-29 a 2027-03-02",
-  ]) assert.equal(planningStepFor(users(text), emptyWorkspace())?.step, "dates");
+    "Quiero hotel en Roma del 30 al 31 de febrero",
+  ]) assert.equal(planningStepFor(users(text), emptyWorkspace(), "2026-10-28")?.step, "dates");
+});
+
+test("fechas sin año toman la próxima ocurrencia y se confirman en el selector", () => {
+  const today = "2026-10-28";
+  const range = (text: string) => {
+    const { startDate, endDate, nights } = parseHotelRequest(text, today);
+    return { startDate, endDate, nights };
+  };
+  assert.deepEqual(range("hola me quiero ir a san pablo del 2 de diciembre al 7"), { startDate: "2026-12-02", endDate: "2026-12-07", nights: 5 });
+  assert.deepEqual(range("del 5 al 10 de enero"), { startDate: "2027-01-05", endDate: "2027-01-10", nights: 5 });
+  assert.deepEqual(range("del 28 de diciembre al 3 de enero"), { startDate: "2026-12-28", endDate: "2027-01-03", nights: 6 });
+  assert.deepEqual(range("del 28 de diciembre al 3"), { startDate: "2026-12-28", endDate: "2027-01-03", nights: 6 });
+  assert.deepEqual(range("entre el 2 y el 7 de diciembre"), { startDate: "2026-12-02", endDate: "2026-12-07", nights: 5 });
+  assert.deepEqual(range("2/12 al 7/12"), { startDate: "2026-12-02", endDate: "2026-12-07", nights: 5 });
+  assert.equal(parseHotelRequest("del 2 de diciembre al 4 adultos", today).nights, undefined);
+  const inferred = planningStepFor(users("hola me quiero ir a san pablo del 2 de diciembre al 7"), emptyWorkspace(), today);
+  assert.equal(inferred?.step, "dates");
+  assert.equal(inferred?.startDate, "2026-12-02");
+  assert.equal(inferred?.endDate, "2026-12-07");
+  assert.equal(planningStepFor(users("hola me quiero ir a san pablo del 2 de diciembre al 7", "Fechas: 2026-12-02 a 2026-12-07"), emptyWorkspace(), today)?.step, "travelers");
+  assert.equal(planningStepFor(users("hola me quiero ir a san pablo del 2 de diciembre al 7", "sí, esas"), emptyWorkspace(), today)?.step, "travelers");
+  assert.equal(planningStepFor(users("Quiero viajar a São Paulo del 2 al 7 de diciembre de 2026"), emptyWorkspace(), today)?.step, "travelers");
 });
 
 test("cuenta noches al cruzar meses, años y el horario de verano", () => {
@@ -89,10 +111,10 @@ test("cuenta noches al cruzar meses, años y el horario de verano", () => {
   assert.equal(parseHotelRequest("Fechas: 05/01/2027 al 10/01/2027").nights, 5);
 });
 
-test("cambiar a fechas ambiguas no conserva silenciosamente las anteriores", () => {
-  const result = planningStepFor(users(...ready, "Mejor del 10 al 15 de febrero"), emptyWorkspace());
-  assert.equal(result?.step, "dates");
-  assert.equal(result?.startDate, undefined);
+test("cambiar a fechas sin año reemplaza las anteriores", () => {
+  const result = planningStepFor(users(...ready, "Mejor del 10 al 15 de febrero"), emptyWorkspace(), "2026-10-28");
+  assert.equal(result?.startDate, "2027-02-10");
+  assert.equal(result?.endDate, "2027-02-15");
   assert.equal(result?.budget, 1500);
 });
 

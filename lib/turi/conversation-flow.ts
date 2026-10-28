@@ -47,7 +47,9 @@ export function replyWithReferenceFlow(
     const dates = planning.startDate && planning.endDate ? formatRange(planning.startDate, planning.endDate) : undefined;
     const replies = {
       destination: "¿A dónde nos vamos? Elegí un destino o escribime el que tengas en mente.",
-      dates: `${planning.destination ? `${planning.destination}, anotado. ` : ""}¿Cuándo viajás? Elegí entrada y salida para contar bien las noches.`,
+      dates: planning.datesToConfirm && dates
+        ? `${planning.destination ? `${planning.destination}, anotado. ` : ""}¿Viajás del ${dates.label}? Son ${dates.nights} noches: confirmá las fechas o cambialas.`
+        : `${planning.destination ? `${planning.destination}, anotado. ` : ""}¿Cuándo viajás? Elegí entrada y salida para contar bien las noches.`,
       travelers: `Perfecto${planning.destination ? `: ${planning.destination}` : ""}${dates ? `, ${dates.label} (${dates.nights} noches)` : ""}. ¿Para cuántas personas es la habitación?`,
       ages: "¿Qué edades tienen los chicos? Me sirve para la habitación y para recomendar actividades para todos.",
       budget: `¿Cuál es tu presupuesto aproximado para el hotel?${planning.nights ? ` Son ${planning.nights} noches: podés elegir un tope por noche o por toda la estadía.` : ""} Indicá la moneda y el monto para todo el grupo.`,
