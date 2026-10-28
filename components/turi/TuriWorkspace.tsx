@@ -10,6 +10,7 @@ import {
   ArrowUpRightIcon,
   ArrowRightIcon,
   DownloadSimpleIcon,
+  NotePencilIcon,
   AirplaneTiltIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
@@ -61,6 +62,12 @@ export default function TuriWorkspace({ onClose }: { onClose: () => void }) {
   const close = () => {
     voice.stop();
     onClose();
+  };
+  const restartChat = () => {
+    if (!window.confirm("¿Empezar una conversación nueva? Se borra el chat; tu viaje, gastos y grupo quedan guardados.")) return;
+    voice.stop();
+    turi.restart();
+    setTab("chat");
   };
   const exportTrip = () => {
     const blob = new Blob(
@@ -137,6 +144,15 @@ export default function TuriWorkspace({ onClose }: { onClose: () => void }) {
                 aria-label="Descargar datos del viaje"
               >
                 <DownloadSimpleIcon size={19} />
+              </button>
+              <button
+                className="turi-icon-button"
+                onClick={restartChat}
+                disabled={!turi.messages.length}
+                title="Nueva conversación"
+                aria-label="Nueva conversación"
+              >
+                <NotePencilIcon size={19} />
               </button>
               <button
                 className="turi-icon-button turi-close"
