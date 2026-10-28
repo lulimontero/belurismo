@@ -22,18 +22,18 @@
   width: 100%;
   min-width: 0;
   padding: 12px;
-  border: 1px solid #dde2d7;
+  border: 1px solid var(--turi-line);
   border-radius: 15px;
-  background: #fff;
-  color: #333b2d;
+  background: var(--turi-surface);
+  color: var(--turi-ink);
   font-size: 12px;
   text-align: left;
   line-height: 1.45;
   cursor: pointer;
 }
 .turi-message-content .turi-option-tile:hover {
-  background: #f7f9f3;
-  border-color: #b9c7a8;
+  background: var(--turi-lavender);
+  border-color: var(--turi-violet);
 }
 .turi-option-tile-heading {
   display: grid;
@@ -47,7 +47,7 @@
   width: 78px;
   height: 78px;
   border-radius: 10px;
-  background: #eff1eb;
+  background: var(--turi-lavender);
   overflow: hidden;
 }
 .turi-option-thumb img {
@@ -59,7 +59,7 @@
   min-height: 0;
   padding: 8px 4px;
   gap: 5px;
-  color: #69765d;
+  color: var(--turi-violet);
 }
 .turi-option-thumb .turi-option-photo-fallback strong {
   font-size: 10px;
@@ -75,8 +75,8 @@
   overflow: hidden;
   font-size: 14px;
   line-height: 1.3;
-  font-weight: 600;
-  color: #252d1f;
+  font-weight: 700;
+  color: var(--turi-ink);
 }
 .turi-option-tile-location {
   display: block;
@@ -85,14 +85,14 @@
   text-overflow: ellipsis;
   margin-top: 4px;
   font-size: 11px;
-  color: #687060;
+  color: var(--turi-muted);
 }
 .turi-option-tile-price {
   display: block;
   margin-top: 5px;
-  color: #445537;
+  color: var(--turi-violet);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.4;
 }
 .turi-option-tile-comparison {
@@ -100,32 +100,38 @@
   gap: 5px;
   font-size: 12px;
   line-height: 1.45;
-  color: #59634f;
+  color: var(--turi-muted);
 }
 .turi-option-tile-comparison > span {
   display: block;
 }
+.turi-option-tile-comparison > span:first-child {
+  color: var(--turi-mint-ink);
+  background: var(--turi-mint-soft);
+  border-radius: 6px;
+  padding: 3px 6px;
+}
 .turi-option-tile-comparison b {
-  color: #435437;
+  color: var(--turi-mint-ink);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   margin-right: 3px;
 }
 .turi-option-tile-comparison > span:last-child b {
-  color: #63685c;
+  color: var(--turi-violet);
 }
 .turi-option-tile-more {
   display: flex;
   align-items: center;
   gap: 5px;
   margin-top: auto;
-  color: #566c44;
+  color: var(--turi-violet);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .turi-option-tile:focus-visible,
 .turi-option-dialog button:focus-visible {
-  outline: 2px solid #617c48;
+  outline: 2px solid var(--turi-violet);
   outline-offset: 3px;
 }
 .turi-option-dialog {
@@ -134,21 +140,21 @@
   max-height: min(85dvh, 800px);
   margin: auto;
   padding: 0;
-  border: 1px solid #dce3d4;
+  border: 1px solid var(--turi-line);
   border-radius: 22px;
-  background: #fff;
-  color: #333b2d;
+  background: var(--turi-surface);
+  color: var(--turi-ink);
   overflow: hidden;
   font-family: var(--font-sans), sans-serif;
   letter-spacing: -.02em;
-  box-shadow: 0 22px 80px #28341c33;
+  box-shadow: 0 22px 80px color-mix(in srgb, var(--turi-violet) 16%, transparent);
 }
 .turi-option-dialog[open] {
   display: flex;
   flex-direction: column;
 }
 .turi-option-dialog::backdrop {
-  background: #20271a70;
+  background: color-mix(in srgb, var(--turi-violet-dark) 30%, transparent);
   backdrop-filter: blur(5px);
 }
 .turi-option-dialog-bar {
@@ -158,11 +164,12 @@
   gap: 15px;
   padding: 9px 12px 9px 20px;
   flex-shrink: 0;
-  border-bottom: 1px solid #e5e9df;
+  border-bottom: 1px solid var(--turi-line);
 }
 .turi-option-dialog-bar > span {
-  color: #647158;
+  color: var(--turi-violet);
   font-size: 12px;
+  font-weight: 700;
 }
 .turi-option-dialog-close {
   display: grid;
@@ -171,11 +178,11 @@
   height: 40px;
   border: 0;
   border-radius: 50%;
-  background: #eef1e9;
-  color: #35422b;
+  background: var(--turi-lavender);
+  color: var(--turi-violet);
 }
 .turi-option-dialog-close:hover {
-  background: #e0e7d7;
+  background: var(--turi-line);
 }
 .turi-option-dialog-scroll {
   flex: 1;
@@ -203,10 +210,10 @@
 .turi-option {
   min-width: 0;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #dde2d7;
+  background: var(--turi-surface);
+  border: 1px solid var(--turi-line);
   border-radius: 17px;
-  color: #333b2d;
+  color: var(--turi-ink);
   text-align: left;
 }
 .turi-option-overview {
@@ -220,8 +227,8 @@
   min-width: 0;
   min-height: 160px;
   overflow: hidden;
-  background: #eff1eb;
-  color: #57624d;
+  background: var(--turi-lavender);
+  color: var(--turi-muted);
   text-decoration: none;
 }
 .turi-option-photo img {
@@ -263,17 +270,17 @@
 }
 .turi-option-kind {
   display: inline-block;
-  color: #637253;
+  color: var(--turi-violet);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.4;
   margin-bottom: 5px;
 }
 .turi-message-content .turi-option h3 {
   margin: 0 0 5px;
-  color: #242a1e;
+  color: var(--turi-ink);
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.3;
   letter-spacing: -.35px;
 }
@@ -284,7 +291,7 @@
   display: flex;
   align-items: flex-start;
   gap: 4px;
-  color: #687060;
+  color: var(--turi-muted);
   font-size: 11px;
   line-height: 1.5;
 }
@@ -294,7 +301,7 @@
 }
 .turi-option-intro .turi-option-summary {
   margin-top: 10px;
-  color: #4e5647;
+  color: var(--turi-ink);
   font-size: 13px;
   line-height: 1.65;
 }
@@ -303,7 +310,7 @@
 }
 .turi-option-price {
   padding-bottom: 13px;
-  border-bottom: 1px solid #e9ece4;
+  border-bottom: 1px solid var(--turi-line);
 }
 .turi-option-price p {
   margin: 0;
@@ -317,23 +324,23 @@
 }
 .turi-option-price strong {
   font-size: 18px;
-  font-weight: 600;
-  color: #23291d;
+  font-weight: 700;
+  color: var(--turi-violet);
   letter-spacing: -.3px;
 }
 .turi-option-price span {
   font-size: 12px;
-  color: #687060;
+  color: var(--turi-muted);
 }
 .turi-option-price small {
   display: block;
   margin-top: 5px;
-  color: #66705c;
+  color: var(--turi-muted);
   font-size: 12px;
   line-height: 1.65;
 }
 .turi-option-price .turi-option-estimate {
-  color: #57624d;
+  color: var(--turi-muted);
   font-size: 12px;
   margin-top: 5px;
 }
@@ -346,12 +353,12 @@
 }
 .turi-option-facts dt {
   font-size: 11px;
-  color: #68765c;
+  color: var(--turi-muted);
 }
 .turi-option-facts dd {
   margin: 2px 0 0;
   font-size: 13px;
-  color: #3c4534;
+  color: var(--turi-ink);
 }
 .turi-option-comparison {
   display: grid;
@@ -359,18 +366,26 @@
   gap: 15px;
   margin-top: 16px;
 }
+.turi-option-comparison > div {
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--turi-mint-soft);
+}
+.turi-option-comparison > div:last-child {
+  background: var(--turi-lavender);
+}
 .turi-option-comparison h4 {
   display: flex;
   align-items: center;
   gap: 5px;
   margin: 0 0 7px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.5;
-  color: #47593a;
+  color: var(--turi-mint-ink);
 }
 .turi-option-comparison > div:last-child h4 {
-  color: #5d6556;
+  color: var(--turi-violet);
 }
 .turi-message-content .turi-option-comparison ul {
   list-style: disc;
@@ -378,7 +393,10 @@
   padding-left: 14px;
   font-size: 13px;
   line-height: 1.65;
-  color: #515b47;
+  color: var(--turi-muted);
+}
+.turi-message-content .turi-option-comparison > div:first-child ul {
+  color: var(--turi-mint-ink);
 }
 .turi-option-comparison li + li {
   margin-top: 5px;
@@ -387,13 +405,13 @@
   margin: 14px 0 0;
   font-size: 12px;
   line-height: 1.7;
-  color: #66705c;
+  color: var(--turi-muted);
 }
 .turi-option-details .turi-option-availability {
   margin: 6px 0 0;
   font-size: 11px;
   line-height: 1.65;
-  color: #68765c;
+  color: var(--turi-muted);
 }
 .turi-option-footer {
   display: flex;
@@ -402,7 +420,7 @@
   gap: 15px;
   padding-top: 14px;
   margin-top: 13px;
-  border-top: 1px solid #e9ece4;
+  border-top: 1px solid var(--turi-line);
 }
 .turi-option-source {
   flex: 1;
@@ -412,7 +430,7 @@
 }
 .turi-message-content .turi-option-source a {
   display: inline;
-  color: #58684a;
+  color: var(--turi-violet);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -422,7 +440,7 @@
 }
 .turi-option-source small {
   display: block;
-  color: #68765c;
+  color: var(--turi-muted);
   font-size: 10px;
   margin-top: 4px;
 }
@@ -435,19 +453,19 @@
   min-height: 44px;
   padding: 9px 13px;
   border-radius: 10px;
-  border: 1px solid #20261a;
-  background: #20261a;
-  color: #fff;
+  border: 1px solid var(--turi-violet);
+  background: var(--turi-violet);
+  color: var(--turi-surface);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.5;
   white-space: nowrap;
   cursor: pointer;
   transition: background .15s, border-color .15s;
 }
 .turi-option-choose:hover:not(:disabled) {
-  background: #3a4730;
-  border-color: #3a4730;
+  background: var(--turi-violet-dark);
+  border-color: var(--turi-violet-dark);
 }
 .turi-option-choose:disabled {
   opacity: .45;
@@ -455,7 +473,7 @@
 }
 .turi-option a:focus-visible,
 .turi-option-choose:focus-visible {
-  outline: 2px solid #617c48;
+  outline: 2px solid var(--turi-violet);
   outline-offset: 3px;
 }
 @media (max-width: 640px) {

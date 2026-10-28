@@ -3,9 +3,9 @@
   min-width: 0;
   margin-top: 10px;
   padding: 14px;
-  color: #323b2b;
-  background: #fff;
-  border: 1px solid #e0e5da;
+  color: var(--turi-ink);
+  background: var(--turi-surface);
+  border: 1px solid var(--turi-line);
   border-radius: 15px;
   font-size: 12px;
   line-height: 1.5;
@@ -19,14 +19,14 @@
 }
 .turi-planning-heading h4 {
   margin: 0;
-  color: #242c1e;
+  color: var(--turi-ink);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
 }
 .turi-planning-selected {
-  color: #48692c;
-  background: #eef6e5;
+  color: var(--turi-mint-ink);
+  background: var(--turi-mint-soft);
   border-radius: 20px;
   padding: 2px 8px;
   font-size: 10px;
@@ -44,7 +44,7 @@
 .turi-planning-step button:focus-visible,
 .turi-planning-step input:focus-visible,
 .turi-planning-step select:focus-visible {
-  outline: 2px solid #827295;
+  outline: 2px solid var(--turi-violet);
   outline-offset: 3px;
 }
 .turi-planning-step button:disabled,
@@ -52,6 +52,20 @@
 .turi-planning-step select:disabled {
   cursor: default;
   opacity: 0.55;
+}
+.turi-planning-step :is(input[type="number"], input[type="date"], select),
+.turi-planning-step strong {
+  color: var(--turi-violet);
+  font-variant-numeric: tabular-nums;
+}
+.turi-planning-step .turi-planning-confirm,
+.turi-planning-chips button[aria-pressed="true"],
+.turi-planning-basis button[aria-pressed="true"] {
+  color: var(--turi-surface);
+}
+.turi-planning-chips button[aria-pressed="true"]:disabled,
+.turi-planning-basis button[aria-pressed="true"]:disabled {
+  opacity: 1;
 }
 .turi-planning-chips {
   display: flex;
@@ -63,21 +77,26 @@
 .turi-planning-chips button {
   min-height: 34px;
   padding: 6px 11px;
-  color: #4a583d;
-  background: #f8f9f6;
-  border: 1px solid #dfe5d7;
+  color: var(--turi-violet);
+  background: var(--turi-surface-soft);
+  border: 1px solid var(--turi-line);
   border-radius: 20px;
   line-height: 1.3;
 }
 .turi-planning-chips button:hover:not(:disabled) {
-  background: #eef3e7;
-  border-color: #a9ba96;
+  background: var(--turi-lavender);
+  border-color: var(--turi-violet);
+}
+.turi-planning-chips button[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--turi-violet-dark);
+  border-color: var(--turi-violet-dark);
+  color: var(--turi-surface);
 }
 .turi-planning-chips button[aria-pressed="true"],
 .turi-planning-basis button[aria-pressed="true"] {
-  color: #fff;
-  background: #28331f;
-  border-color: #28331f;
+  color: var(--turi-surface);
+  background: var(--turi-violet);
+  border-color: var(--turi-violet);
 }
 .turi-planning-columns {
   display: grid;
@@ -96,7 +115,7 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
-  color: #626f54;
+  color: var(--turi-muted);
   font-size: 11px;
 }
 .turi-planning-field input,
@@ -105,14 +124,14 @@
   min-width: 0;
   min-height: 37px;
   padding: 8px 10px;
-  color: #313b29;
-  background: #fff;
-  border: 1px solid #dce3d2;
+  color: var(--turi-ink);
+  background: var(--turi-surface);
+  border: 1px solid #9c80c5;
   border-radius: 8px;
   line-height: 1.3;
   color-scheme: light;
 }
-.turi-planning-field input::placeholder { color: #8f9887; }
+.turi-planning-field input::placeholder { color: var(--turi-muted); }
 .turi-planning-step .turi-planning-confirm {
   display: inline-flex;
   align-items: center;
@@ -121,19 +140,19 @@
   gap: 6px;
   min-height: 37px;
   padding: 9px 13px;
-  color: #fff;
-  background: #25301e;
-  border: 1px solid #25301e;
+  color: var(--turi-surface);
+  background: var(--turi-violet);
+  border: 1px solid var(--turi-violet);
   border-radius: 9px;
   font-size: 11px;
   font-weight: 500;
   line-height: 1.3;
 }
-.turi-planning-step .turi-planning-confirm:hover:not(:disabled) { background: #3e4d33; }
+.turi-planning-step .turi-planning-confirm:hover:not(:disabled) { background: var(--turi-violet-dark); }
 .turi-planning-note,
 .turi-planning-budget-total {
   margin: 0 0 11px;
-  color: #647056;
+  color: var(--turi-muted);
   font-size: 11px;
   line-height: 1.55;
 }
@@ -144,7 +163,7 @@
   align-items: end;
   gap: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #edf0e8;
+  border-bottom: 1px solid var(--turi-line);
 }
 .turi-planning-age .turi-planning-chips { gap: 4px; margin: 0 0 2px; }
 .turi-planning-age .turi-planning-chips button { min-height: 31px; padding: 5px 8px; font-size: 10px; }
@@ -161,15 +180,15 @@
   gap: 4px;
   min-height: 37px;
   padding: 3px;
-  background: #f4f6ef;
-  border: 1px solid #e3e7dc;
+  background: var(--turi-lavender);
+  border: 1px solid var(--turi-line);
   border-radius: 9px;
 }
 .turi-planning-basis button {
   flex: 1;
   min-height: 29px;
   padding: 5px 7px;
-  color: #68755c;
+  color: var(--turi-muted);
   background: transparent;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -183,22 +202,39 @@
   justify-content: space-between;
   gap: 3px 10px;
   padding: 9px 11px;
-  color: #46563b;
+  color: var(--turi-violet);
   text-align: left;
-  background: #fafbf8;
-  border: 1px solid #e1e6da;
+  background: var(--turi-surface-soft);
+  border: 1px solid var(--turi-line);
   border-radius: 10px;
 }
-.turi-planning-budget-ranges button:hover:not(:disabled) { border-color: #a9bb96; background: #f1f6e9; }
+.turi-planning-budget-ranges button:hover:not(:disabled) { border-color: var(--turi-violet); background: var(--turi-lavender); }
 .turi-planning-budget-ranges strong { font-size: 11px; font-weight: 500; }
-.turi-planning-budget-ranges span { font-size: 10px; color: #7a886d; }
+.turi-planning-budget-ranges span { font-size: 10px; color: var(--turi-muted); }
 .turi-planning-budget-total { margin: 9px 0 0; }
-.turi-planning-footnote { margin: 8px 0 0; font-size: 10px; color: #89917f; line-height: 1.4; }
-.turi-planning-error { margin: 9px 0 0; color: #a94438; font-size: 11px; line-height: 1.4; }
+.turi-planning-footnote { margin: 8px 0 0; font-size: 10px; color: var(--turi-muted); line-height: 1.4; }
+.turi-planning-error { margin: 9px 0 0; padding: 8px 10px; color: #a12858; background: #fff0f5; border: 1px solid #f4c6d7; border-radius: 8px; font-size: 11px; line-height: 1.4; }
+@media (max-width: 640px) {
+  .turi-planning-field input,
+  .turi-planning-field select {
+    box-sizing: border-box;
+    max-width: 100%;
+    font-size: 16px;
+  }
+  .turi-planning-field input[type="date"] { min-inline-size: 0; }
+}
 @media (max-width: 520px) {
   .turi-planning-step { padding: 12px; }
   .turi-planning-inline { align-items: stretch; flex-direction: column; }
   .turi-planning-inline .turi-planning-confirm { align-self: flex-start; }
   .turi-planning-age { grid-template-columns: 80px minmax(0, 1fr); gap: 8px; }
   .turi-planning-age .turi-planning-chips button { padding: 6px 8px; }
+}
+@media (max-width: 380px) {
+  .turi-planning-columns,
+  .turi-planning-budget-controls { grid-template-columns: minmax(0, 1fr); }
+  .turi-planning-age { grid-template-columns: minmax(0, 1fr); }
+  .turi-planning-age .turi-planning-field { max-width: 130px; }
+  .turi-planning-age .turi-planning-chips { margin: 0; }
+  .turi-planning-age .turi-planning-chips button { min-height: 34px; padding: 6px 10px; }
 }

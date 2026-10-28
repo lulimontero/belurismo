@@ -17,6 +17,8 @@ La burbuja de la landing abre una conversación real preparada para OpenAI. El c
 
 ## Respuestas visuales e interacción dentro del chat
 
+El agente comparte la identidad de la página: blanco y lavanda en las superficies, violeta `#5300da` en acciones y cifras, y menta para estados positivos. Los tokens están definidos en `components/turi/turi.css` y se usan también en formularios, tarjetas, detalles, voz y conexiones. La tipografía continúa siendo la de la página. En móvil se apilan los formularios estrechos y los campos mantienen un tamaño legible; se respetan las preferencias de movimiento y transparencia reducidos.
+
 Los patrones de `turi-pretrip.html` y `turi-posttrip.html` se portaron a componentes React dentro de la respuesta de Turi: selección de fechas, viajeros, edades y presupuesto; respuestas rápidas; barras de presupuesto y gasto diario; listas de preparación; selección de plantilla y puntajes. Se conservan sus interacciones útiles, pero los destinos, gastos, tasas, promociones, saldos y acciones simuladas de esos archivos no se cargan como datos reales.
 
 ### Opciones compactas y detalle

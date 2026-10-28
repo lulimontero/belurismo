@@ -10,6 +10,7 @@ import {
   ArrowUpRightIcon,
   ArrowRightIcon,
   DownloadSimpleIcon,
+  AirplaneTiltIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { budgetSummary, money } from "@/lib/turi/domain";
@@ -113,7 +114,7 @@ export default function TuriWorkspace({ onClose }: { onClose: () => void }) {
           <header className="turi-header">
             <div className="turi-header-title">
               <h1 id="turi-title">
-                Turi<span>Tu copiloto de viaje</span>
+                Turi <small>by Belo</small><span>Tu copiloto de viaje</span>
               </h1>
               <span className="turi-ai-badge">
                 <i />
@@ -178,12 +179,11 @@ export default function TuriWorkspace({ onClose }: { onClose: () => void }) {
             <span className="turi-tiny-dot" />
           </div>
           <button className="turi-trip-cover" onClick={() => setTab("trip")}>
-            <div className="turi-orbit-scene" aria-hidden="true">
-              <div className="turi-orbit-ring" />
-              <div className="turi-orbit-sphere" />
-              <span className="turi-orbit-star">✦</span>
+            <div className="turi-ticket-visual" aria-hidden="true">
+              <span>UN VIAJE. TURI EN CADA ETAPA.</span>
+              <AirplaneTiltIcon size={45} weight="fill" />
             </div>
-            <span className="turi-cover-label">TU PRÓXIMA HISTORIA</span>
+            <span className="turi-cover-label">PRÓXIMA PARADA</span>
             <strong>{trip.destination || "Un viaje por imaginar."}</strong>
             <span className="turi-cover-bottom">
               {trip.startDate

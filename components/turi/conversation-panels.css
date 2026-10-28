@@ -1,13 +1,13 @@
-/* Source HTML card/bar/day/check/star patterns adapted to Turi's existing palette. */
+/* Source HTML card/bar/day/check/star patterns in the Turi/Belo palette. */
 .turi-panel-stack { display: grid; gap: 12px; min-width: 0; }
 .turi-conversation-panel {
-  background: #fff;
-  border: 1px solid #dfe4d9;
+  background: var(--turi-surface);
+  border: 1px solid var(--turi-line);
   border-radius: 17px;
   padding: 17px;
   margin-top: 12px;
   min-width: 0;
-  color: #41493a;
+  color: var(--turi-ink);
   font-size: 13px;
   line-height: 1.6;
   text-align: left;
@@ -15,79 +15,92 @@
 }
 .turi-panel-stack .turi-conversation-panel { margin-top: 0; }
 .turi-panel-stack { margin-top: 12px; }
-.turi-message-content .turi-conversation-panel h3 { margin: 0 0 10px; font-size: 16px; font-weight: 600; color: #252e1e; line-height: 1.35; }
+.turi-message-content .turi-conversation-panel h3 { margin: 0 0 10px; font-size: 16px; font-weight: 600; color: var(--turi-ink); line-height: 1.35; }
 .turi-conversation-panel h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; line-height: 1.4; }
 .turi-conversation-panel p { margin: 8px 0; }
-.turi-conversation-panel .turi-panel-subtitle { font-size: 12px; color: #68765c; margin: -3px 0 13px; }
-.turi-conversation-panel small { color: #68765c; font-size: 11px; line-height: 1.5; }
-.turi-conversation-panel.alert { border-color: #dfb9ab; background: #fffbf8; }
+.turi-conversation-panel .turi-panel-subtitle { font-size: 12px; color: var(--turi-muted); margin: -3px 0 13px; }
+.turi-conversation-panel small { color: var(--turi-muted); font-size: 11px; line-height: 1.5; }
+.turi-conversation-panel.alert { border-color: #f4c6d7; background: #fff0f5; }
 .turi-panel-total-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .turi-panel-total-row > div { min-width: 0; }
 .turi-panel-total-row small { display: block; }
-.turi-panel-big { display: block; font-size: clamp(23px, 3vw, 29px); font-weight: 650; color: #252e1e; line-height: 1.4; letter-spacing: -.8px; }
-.turi-panel-badge { display: inline-block; width: fit-content; max-width: 100%; border-radius: 7px; padding: 4px 8px; background: #f1f3ed; color: #5f6f52; font-size: 11px; line-height: 1.4; }
-.turi-panel-badge.positive { background: #edf4e7; color: #4d683a; }
-.turi-panel-badge.warning { background: #faeee7; color: #915339; }
+.turi-panel-big { display: block; font-size: clamp(23px, 3vw, 29px); font-weight: 650; color: var(--turi-violet); line-height: 1.4; letter-spacing: -.8px; }
+.turi-panel-badge { display: inline-block; width: fit-content; max-width: 100%; border-radius: 7px; padding: 4px 8px; background: var(--turi-lavender); color: var(--turi-violet); font-size: 11px; line-height: 1.4; }
+.turi-panel-badge.positive { background: var(--turi-mint-soft); color: var(--turi-mint-ink); }
+.turi-panel-badge.warning { background: #ffe5ee; color: #a12858; }
 .turi-panel-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; font-size: 12px; }
 .turi-panel-row > span { min-width: 0; }
-.turi-panel-row > strong { text-align: right; font-weight: 550; color: #35432a; }
-.turi-panel-divider { border-top: 1px solid #e8ece3; margin: 9px 0; }
-.turi-conversation-panel .turi-panel-note { color: #68765c; font-size: 11px; line-height: 1.7; margin: 10px 0 0; }
-.turi-conversation-panel .turi-panel-empty { color: #68765c; font-size: 12px; line-height: 1.7; }
-.turi-panel-meter { height: 9px; background: #ecefe7; border-radius: 99px; position: relative; margin: 9px 0; overflow: hidden; }
-.turi-panel-meter > span { position: absolute; left: 0; top: 0; bottom: 0; background: #8daa73; border-radius: 99px; }
-.turi-panel-meter.warning > span { background: #c37b60; }
+.turi-panel-row > strong { text-align: right; font-weight: 550; color: var(--turi-violet); }
+.turi-panel-divider { border-top: 1px solid var(--turi-line); margin: 9px 0; }
+.turi-conversation-panel .turi-panel-note { color: var(--turi-muted); font-size: 11px; line-height: 1.7; margin: 10px 0 0; }
+.turi-conversation-panel .turi-panel-empty { color: var(--turi-muted); font-size: 12px; line-height: 1.7; }
+.turi-panel-meter { height: 9px; background: var(--turi-lavender); border-radius: 99px; position: relative; margin: 9px 0; overflow: hidden; }
+.turi-panel-meter > span { position: absolute; left: 0; top: 0; bottom: 0; background: var(--turi-violet); border-radius: 99px; }
+.turi-panel-meter.warning > span { background: #cc3c74; }
 .turi-panel-category { margin-top: 10px; }
-.turi-panel-category .turi-panel-meter > span { background: #303a28; }
+.turi-panel-category .turi-panel-meter > span { background: var(--turi-violet); }
 .turi-panel-category .turi-panel-meter { height: 7px; margin: 4px 0; }
+.turi-conversation-panel:has(> .turi-panel-check) > .turi-panel-meter > span { background: var(--turi-mint-ink); }
+.turi-panel-big,
+.turi-panel-row > strong,
+.turi-panel-day > strong,
+.turi-panel-badge,
+.turi-conversation-panel input[type="number"] { font-variant-numeric: tabular-nums; }
 .turi-panel-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 13px; }
 .turi-conversation-panel .turi-panel-buttons button,
 .turi-conversation-panel .turi-panel-form > button {
   display: inline-flex; justify-content: center; align-items: center; gap: 7px;
-  border-radius: 10px; border: 1px solid #242c1e; padding: 9px 13px;
+  border-radius: 10px; border: 1px solid var(--turi-violet); padding: 9px 13px;
   font-size: 12px; font-weight: 550; line-height: 1.45; min-height: 42px;
-  background: #242c1e; color: #fff; cursor: pointer;
+  background: var(--turi-violet); color: var(--turi-surface); cursor: pointer;
 }
-.turi-conversation-panel .turi-panel-buttons button.secondary { background: #f5f7f0; border-color: #e1e7d8; color: #5b6c4e; }
+.turi-conversation-panel .turi-panel-buttons button.secondary { background: var(--turi-lavender); border-color: var(--turi-line); color: var(--turi-violet); }
 .turi-conversation-panel .turi-panel-buttons button:hover:not(:disabled),
-.turi-conversation-panel .turi-panel-form > button:hover:not(:disabled) { background: #415335; border-color: #415335; color: #fff; }
-.turi-conversation-panel button:disabled { opacity: .45; cursor: not-allowed; }
-.turi-conversation-panel :is(button, input):focus-visible { outline: 2px solid #7d985f; outline-offset: 3px; }
+.turi-conversation-panel .turi-panel-form > button:hover:not(:disabled) { background: var(--turi-violet-dark); border-color: var(--turi-violet-dark); color: var(--turi-surface); }
+.turi-conversation-panel .turi-panel-buttons button.secondary:hover:not(:disabled) { background: #ece0ff; border-color: var(--turi-violet); color: var(--turi-violet); }
+.turi-conversation-panel button:disabled { opacity: .55; cursor: not-allowed; }
+.turi-conversation-panel :is(button, input):focus-visible { outline: 2px solid var(--turi-violet); outline-offset: 3px; }
 .turi-panel-chart-scroll { max-height: 320px; overflow-y: auto; padding: 2px 3px; }
 .turi-panel-day { display: grid; grid-template-columns: 47px minmax(24px, 1fr) auto; gap: 9px; align-items: center; margin: 10px 0; font-size: 11px; }
 .turi-panel-day > span { line-height: 1.4; }
 .turi-panel-day small { display: block; font-size: 9px; }
-.turi-panel-day > strong { font-size: 11px; font-weight: 550; text-align: right; max-width: 130px; }
-.turi-panel-day-track { position: relative; height: 11px; background: #eef0e9; border-radius: 99px; }
-.turi-panel-day-track > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: #9bb886; }
-.turi-panel-day-track > i.excess { background: #c88065; }
-.turi-panel-day-track > b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #252c1e; }
-.turi-conversation-panel .turi-panel-text-button { color: #647b50; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; margin-top: 10px; }
+.turi-panel-day > strong { font-size: 11px; font-weight: 550; color: var(--turi-violet); text-align: right; max-width: 130px; }
+.turi-panel-day-track { position: relative; height: 11px; background: var(--turi-lavender); border-radius: 99px; }
+.turi-panel-day-track > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--turi-mint-ink); }
+.turi-panel-day-track > i.excess { background: #cc3c74; }
+.turi-panel-day-track > b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--turi-ink); }
+.turi-conversation-panel .turi-panel-text-button { color: var(--turi-violet); font-size: 11px; text-decoration: underline; text-underline-offset: 3px; margin-top: 10px; }
 .turi-message-content .turi-panel-tips { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.7; }
 .turi-panel-tips li + li { margin-top: 7px; }
-.turi-panel-ledger { padding: 8px 0; border-bottom: 1px solid #e8ece3; }
+.turi-panel-ledger { padding: 8px 0; border-bottom: 1px solid var(--turi-line); }
 .turi-panel-ledger + .turi-panel-row { margin-top: 8px; }
 .turi-panel-ledger small { display: block; }
-.turi-panel-preview, .turi-panel-share-preview { border: 1px dashed #b9c6a9; border-radius: 12px; padding: 13px; margin-top: 13px; background: #fafbf7; font-size: 12px; line-height: 1.7; }
+.turi-panel-preview, .turi-panel-share-preview { border: 1px dashed #9c80c5; border-radius: 12px; padding: 13px; margin-top: 13px; background: var(--turi-surface-soft); font-size: 12px; line-height: 1.7; }
 .turi-panel-share-preview { white-space: pre-line; }
-.turi-conversation-panel .turi-panel-status { display: flex; align-items: center; gap: 6px; margin-top: 9px; color: #597345; }
-.turi-panel-check { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-top: 1px solid #e7ecdf; font-size: 12px; cursor: pointer; line-height: 1.5; }
+.turi-conversation-panel .turi-panel-status { display: flex; align-items: center; gap: 6px; margin-top: 9px; color: var(--turi-mint-ink); }
+.turi-panel-check { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-top: 1px solid var(--turi-line); font-size: 12px; cursor: pointer; line-height: 1.5; }
 .turi-panel-check:first-of-type { border-top: 0; }
-.turi-panel-check > input, .turi-panel-switch > input { width: 17px; height: 17px; margin: 2px 0 0; accent-color: #29361f; flex-shrink: 0; }
-.turi-panel-check strong, .turi-panel-switch strong { font-size: 12px; font-weight: 550; color: #415036; }
+.turi-panel-check > input, .turi-panel-switch > input { width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--turi-violet); flex-shrink: 0; }
+.turi-panel-check strong, .turi-panel-switch strong { font-size: 12px; font-weight: 550; color: var(--turi-ink); }
 .turi-panel-check small, .turi-panel-switch small { display: block; margin-top: 3px; }
+.turi-panel-check:has(input:checked) strong { color: var(--turi-violet); }
 .turi-panel-check:has(input:disabled) { cursor: default; opacity: .6; }
-.turi-panel-nested-checks { margin: 0 0 8px 25px; border-left: 2px solid #e6ecdd; padding-left: 12px; max-height: 240px; overflow-y: auto; }
-.turi-panel-switch { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; line-height: 1.5; padding: 12px; margin-top: 13px; border: 1px solid #e3e9da; border-radius: 12px; background: #f9fbf5; cursor: pointer; }
+.turi-panel-nested-checks { margin: 0 0 8px 25px; border-left: 2px solid var(--turi-line); padding-left: 12px; max-height: 240px; overflow-y: auto; }
+.turi-panel-switch { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; line-height: 1.5; padding: 12px; margin-top: 13px; border: 1px solid var(--turi-line); border-radius: 12px; background: var(--turi-surface-soft); cursor: pointer; }
+.turi-panel-switch:has(input:checked) { background: var(--turi-mint-soft); border-color: var(--turi-mint); }
+.turi-panel-switch:has(input:checked) strong { color: var(--turi-mint-ink); }
 .turi-panel-rating { margin: 14px 0; }
 .turi-panel-rating > strong { font-size: 12px; font-weight: 550; }
 .turi-panel-stars { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
-.turi-panel-stars button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid #e1e6d9; background: #f3f6ed; border-radius: 9px; color: #657854; }
-.turi-panel-stars button.selected { background: #e4efd9; border-color: #b6cca2; color: #526f3b; }
+.turi-panel-stars button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid var(--turi-line); background: var(--turi-surface-soft); border-radius: 9px; color: var(--turi-violet); }
+.turi-panel-stars button.selected { background: var(--turi-lavender); border-color: var(--turi-violet); color: var(--turi-violet); }
+.turi-panel-stars button:hover:not(:disabled) { border-color: var(--turi-violet); background: var(--turi-lavender); }
 .turi-panel-stars small { margin-left: 4px; }
 .turi-conversation-panel .turi-panel-form { display: flex; flex-wrap: wrap; gap: 9px; align-items: flex-end; margin-top: 13px; }
-.turi-panel-form label { display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #6b7a5c; flex: 1; min-width: 0; }
-.turi-conversation-panel .turi-panel-form input { border: 1px solid #dce4d2; border-radius: 10px; padding: 10px 11px; background: #fff; color: #3b4930; font-size: 13px; min-width: 0; width: 100%; }
+.turi-panel-form label { display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: var(--turi-muted); flex: 1; min-width: 0; }
+.turi-conversation-panel .turi-panel-form input { border: 1px solid #9c80c5; border-radius: 10px; padding: 10px 11px; background: var(--turi-surface); color: var(--turi-ink); font-size: 13px; min-width: 0; width: 100%; }
+.turi-conversation-panel .turi-panel-form input[type="number"] { color: var(--turi-violet); }
+.turi-conversation-panel .turi-panel-form input::placeholder { color: var(--turi-muted); }
 @media (max-width: 640px) {
   .turi-conversation-panel { padding: 14px; }
   .turi-panel-row { font-size: 12px; gap: 10px; }
