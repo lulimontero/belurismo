@@ -9,6 +9,9 @@ import {
   budgetSummary,
   settleExpenses,
   applyLocalAction,
+  categories,
+  currencies,
+  expenseSchema,
   type Workspace,
   type LocalAction,
   type Attachment,
@@ -68,6 +71,28 @@ export function validateAttachments(files: Attachment[]) {
   if (total > 2_500_000)
     throw new AppError("Los adjuntos juntos deben pesar hasta 2,5 MB.", 413);
 }
+const proposalCorrectionNote = "Corregí únicamente el formato o los campos indicados y reintentá propose_update. Conservá los importes, la moneda, la fecha, quién pagó y el reparto que pidió el usuario; no elimines shares ni los conviertas en gasto personal. Si falta un dato o una equivalencia, preguntá en vez de inventarlos. Ningún gasto fue guardado.";
+const expenseProposalDataSchema = expenseSchema.omit({ id: true }).extend({
+  // Require explicit values instead of silently turning a shared expense private.
+  payer: z.string().min(1).max(80),
+  shares: z.array(z.object({ memberId: z.string().min(1).max(80), amount: z.number().finite().min(0).max(1_000_000_000) })).max(50),
+});
+
+/** Field diagnostics never echo raw arguments or provider errors. */
+export function toolArgumentError(error: unknown) {
+  if (error instanceof z.ZodError) return {
+    error: "invalid_tool_arguments", recoverable: true,
+    fields: error.issues.map(issue => ({ field: issue.path.map(String).join(".") || "arguments", code: issue.code, message: issue.message })),
+    note: "Corregí los campos indicados y reintentá la herramienta sin alterar los datos aportados por el usuario. Si falta información real, preguntá; no la inventes.",
+  };
+  if (error instanceof SyntaxError) return {
+    error: "invalid_tool_json", recoverable: true,
+    fields: [{ field: "arguments", code: "invalid_json", message: "Los argumentos deben ser un objeto JSON válido." }],
+    note: "Reintentá con JSON válido, conservando exactamente los datos del usuario.",
+  };
+  return undefined;
+}
+
 const functions = [
   {
     name: "present_price_review",
@@ -129,7 +154,7 @@ const functions = [
   {
     name: "propose_update",
     description:
-      "Prepara para revisión una actualización del viaje. Nunca la guarda automáticamente. type: expense, itinerary, trip o reminder. expense: description,amount,currency,homeAmount,date,category,payer,shares. itinerary: title,start,end,location,notes,reminderMinutes. trip: campos de contexto. reminder: title,at. Fechas ISO. Los importes de homeAmount y shares van en moneda del presupuesto; preguntar si falta equivalencia.",
+      "Prepara una propuesta que el usuario revisa y guarda; nunca aplica cambios automáticamente. type: expense, itinerary, trip o reminder. Para expense, data requiere description, amount (>0), currency, homeAmount (>0), date (YYYY-MM-DD), category, payer y shares. payer es 'me' cuando pagó el usuario ('yo'/'Vos'), o el id real de state.members: nunca su nombre. shares es un ARRAY de objetos {memberId:string, amount:number}; memberId también es 'me' o un id real de state.members, sin repetir. Incluir a todos los participantes del reparto, incluso quien pagó si corresponde; la suma de shares.amount debe ser homeAmount. shares=[] sólo para gasto personal explícito, nunca para reparar un reparto inválido. amount está en currency; homeAmount y cada share.amount en state.trip.currency (moneda del presupuesto). Si currency coincide, homeAmount=amount; si difiere y falta equivalencia confirmada, preguntá sin inventar tasa. Categorías exactas: Comida, Alojamiento, Transporte, Actividades, Compras, Otros. Ante recoverable/fields, corregí el formato y reintentá sin cambiar importes, pagador o participantes. itinerary: title,start,end (ISO con zona),location,notes,reminderMinutes. trip: campos de contexto. reminder: title,at (ISO con zona).",
     parameters: {
       type: "object",
       properties: {
@@ -138,7 +163,25 @@ const functions = [
           enum: ["expense", "itinerary", "trip", "reminder"],
         },
         label: { type: "string" },
-        data: { type: "object", additionalProperties: true },
+        data: {
+          type: "object",
+          description: "Con type=expense son obligatorios description, amount, currency, homeAmount, date, category, payer y shares. Otros tipos usan sus campos de contexto.",
+          properties: {
+            description: { type: "string", minLength: 1, maxLength: 180 },
+            amount: { type: "number", exclusiveMinimum: 0 },
+            currency: { type: "string", enum: currencies },
+            homeAmount: { type: "number", exclusiveMinimum: 0, description: "Total en state.trip.currency; no inventar equivalencias." },
+            date: { type: "string", description: "Fecha del gasto YYYY-MM-DD, confirmada o derivada de una referencia temporal explícita del usuario." },
+            category: { type: "string", enum: categories },
+            payer: { type: "string", description: "'me' si pagó el usuario; si no, id real de state.members. No nombre ni objeto." },
+            shares: {
+              type: "array", maxItems: 50,
+              description: "Reparto en moneda del presupuesto, cada integrante una vez y suma igual a homeAmount. [] sólo para gasto personal explícito.",
+              items: { type: "object", properties: { memberId: { type: "string", description: "'me' o id real de state.members" }, amount: { type: "number", minimum: 0 } }, required: ["memberId", "amount"], additionalProperties: false },
+            },
+          },
+          additionalProperties: true,
+        },
       },
       required: ["type", "label", "data"],
       additionalProperties: false,
@@ -423,17 +466,32 @@ export async function executeTool(
     return result;
   }
   if (name === "propose_update") {
-    const input = z
-      .object({
+    let action: LocalAction;
+    try {
+      const input = z.object({
         type: z.enum(["expense", "itinerary", "trip", "reminder"]),
         label: z.string().min(1).max(180),
         data: z.record(z.string(), z.unknown()),
-      })
-      .parse(args);
-    const data = { ...input.data, id: crypto.randomUUID() };
-    const action: LocalAction = { ...input, data };
-    // Parse and calculate server-side; only a reviewed click applies this action.
-    applyLocalAction(state, action);
+      }).parse(args);
+      const fields = input.type === "expense"
+        ? z.object({ data: expenseProposalDataSchema }).parse(input).data
+        : input.data;
+      action = { ...input, data: { ...fields, id: crypto.randomUUID() } };
+      // This is pure validation. Discard the calculated workspace; only the
+      // user's reviewed click can save the action that follows.
+      applyLocalAction(state, action);
+    } catch (error) {
+      return {
+        ...(toolArgumentError(error) || {
+          error: "invalid_proposal", recoverable: true,
+          fields: [{ field: "data", message: error instanceof Error ? error.message : "Revisá los datos de la propuesta." }],
+        }),
+        note: proposalCorrectionNote,
+        budgetCurrency: state.trip.currency,
+        participants: [{ id: "me", name: "Vos" }, ...state.members.map(member => ({ id: member.id, name: member.name }))],
+        expenseFormat: { payer: "me | state.members[].id", shares: [{ memberId: "me | state.members[].id", amount: "number in budgetCurrency" }], date: "YYYY-MM-DD", categories },
+      };
+    }
     emit({ type: "proposal", action });
     return {
       status: "awaiting_user_review",
@@ -557,7 +615,7 @@ export async function runAgent(
           emit,
         );
       } catch (error) {
-        result = {
+        result = toolArgumentError(error) || {
           error:
             error instanceof AppError
               ? error.message
