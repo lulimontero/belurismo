@@ -26,7 +26,7 @@ test("malformed shares produce actionable field paths, no proposal and no ledger
   assert.equal(result.budgetCurrency, "BRL");
   assert.deepEqual(result.participants, [{ id: "me", name: "Vos" }, { id: "ana-qa", name: "Ana QA" }, { id: "bruno-qa", name: "Bruno QA" }]);
   assert.doesNotMatch(JSON.stringify(result), /private@example|private-qa/);
-  assert.deepEqual(events, []);
+  assert.equal(events.length, 0);
   assert.deepEqual(state, before);
 });
 
@@ -46,7 +46,7 @@ test("invalid or missing shares, IDs and monetary semantics stay recoverable wit
     const result = await executeTool("isolated-proposal-qa", "propose_update", args(data), state, event => events.push(event)) as Result;
     assert.equal(result.recoverable, true, label);
     assert.match(result.fields?.map(field => field.message).join(" ") || "", message, label);
-    assert.deepEqual(events, [], label);
+    assert.equal(events.length, 0, label);
     assert.deepEqual(state, before, label);
   }
 });
@@ -55,7 +55,7 @@ test("a corrected retry emits exactly the requested reviewed proposal and never 
   const state = fixture(), before = structuredClone(state), events: Event[] = [];
   const invalid = await executeTool("isolated-proposal-qa", "propose_update", args({ ...valid(), shares: ["me", "ana-qa", "bruno-qa"] }), state, event => events.push(event)) as Result;
   assert.equal(invalid.recoverable, true);
-  assert.deepEqual(events, []);
+  assert.equal(events.length, 0);
   const requested = valid();
   const result = await executeTool("isolated-proposal-qa", "propose_update", args(requested), state, event => events.push(event)) as Result;
   assert.equal(result.status, "awaiting_user_review");
