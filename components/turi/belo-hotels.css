@@ -1,0 +1,49 @@
+.belo-hotels { display: grid; gap: 10px; min-width: 0; }
+.belo-hotels header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 14px; }
+.belo-hotels header div { display: grid; gap: 2px; min-width: 0; }
+.belo-hotels header strong { font-size: 14px; color: var(--turi-ink); }
+.belo-hotels header span { font-size: 11px; color: var(--turi-muted); line-height: 1.4; }
+.belo-hotels header a { font-size: 12px; font-weight: 600; color: var(--turi-violet); text-decoration: none; white-space: nowrap; }
+.belo-hotels header a:hover { text-decoration: underline; }
+.belo-hotels ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.belo-hotel {
+  display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 14px; align-items: stretch;
+  padding: 8px; border-radius: 14px; background: var(--turi-surface); color: var(--turi-ink); text-decoration: none;
+  box-shadow: inset 0 0 0 1px var(--turi-line); transition: box-shadow .15s, transform .15s;
+}
+.belo-hotel:hover { box-shadow: inset 0 0 0 1px var(--turi-violet), 0 8px 22px -14px rgba(83, 0, 218, .45); transform: translateY(-1px); }
+.belo-hotel:focus-visible { outline: 2px solid var(--turi-violet); outline-offset: 2px; }
+
+.belo-hotel-photo { position: relative; overflow: hidden; border-radius: 10px; min-height: 112px; background: var(--turi-lavender); }
+.belo-hotel-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.belo-hotel-nophoto { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--turi-violet); }
+.belo-hotel-discount {
+  position: absolute; top: 8px; left: 8px; padding: 3px 7px; border-radius: 6px;
+  background: var(--turi-mint-bright); color: var(--turi-ink); font-size: 10px; font-weight: 700;
+}
+
+.belo-hotel-info { display: grid; align-content: start; gap: 3px; min-width: 0; padding: 4px 0; }
+.belo-hotel-stars { font-size: 12px; letter-spacing: 1px; color: var(--turi-ink); }
+.belo-hotel-stars span { color: #e0e0e0; }
+.belo-hotel-info h4 { margin: 0; font-size: 15px; line-height: 1.25; font-weight: 600; }
+.belo-hotel-info p { margin: 0; font-size: 11px; color: var(--turi-muted); line-height: 1.35; }
+.belo-hotel-rating { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px; font-weight: 600; }
+.belo-hotel-rating b { display: grid; place-items: center; min-width: 26px; height: 22px; padding: 0 4px; border-radius: 6px; background: var(--turi-violet); color: #fff; font-size: 11px; }
+
+.belo-hotel-price { display: grid; justify-items: end; align-content: end; gap: 1px; padding: 4px 6px 4px 0; text-align: right; white-space: nowrap; }
+.belo-hotel-price small { font-size: 10px; color: var(--turi-muted); }
+.belo-hotel-price s { font-size: 11px; color: var(--turi-muted); }
+.belo-hotel-price strong { font-size: 17px; font-weight: 700; color: var(--turi-ink); }
+.belo-hotel-price .belo-hotel-taxes { color: var(--turi-mint-ink); }
+
+@media (max-width: 560px) {
+  .belo-hotel { grid-template-columns: 96px minmax(0, 1fr); }
+  .belo-hotel-photo { min-height: 96px; }
+  .belo-hotel-price { grid-column: 1 / -1; grid-template-columns: auto auto auto; justify-content: end; align-items: baseline; gap: 6px; }
+  .belo-hotel-price small:first-child, .belo-hotel-price .belo-hotel-taxes { display: none; }
+}
+/* The chat underlines every link; a hotel card is a link but must read like belo travel's listing. */
+.belo-hotels a.belo-hotel, .belo-hotels a.belo-hotel * { text-decoration: none; }
+.belo-hotels a.belo-hotel { color: var(--turi-ink); }
+.belo-hotels a.belo-hotel s { text-decoration: line-through; }

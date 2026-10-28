@@ -48,3 +48,17 @@ test("ante un 429 de belo reintenta con la misma Idempotency-Key", async () => {
   assert.equal(keys.length, 2);
   assert.equal(keys[0], keys[1]);
 });
+
+test("belo travel: arma la URL de búsqueda con el formato del sitio y el widget sólo acepta links de belo travel", async () => {
+  const { beloTravelSearchUrl, beloTravelHotelUrl, findBeloTravelDestination } = await import("../lib/turi/belo-travel");
+  const { readConversationWidget } = await import("../lib/turi/conversation-widgets");
+  const tucuman = findBeloTravelDestination("Me voy a Tucumán");
+  assert.ok(tucuman);
+  assert.equal(beloTravelSearchUrl(tucuman, "2026-10-28", "2026-10-29", 2),
+    "https://travel.belo.app/search?businessTrip=false&dates=20261028,20261029&placeId=ChIJA2nF1pI3IpQRJ2XFtZJbjfg&propertyTypes=1&q=San%20Miguel%20de%20Tucum%C3%A1n,%20Tucum%C3%A1n%20Province,%20Argentina&rooms=2-&sorting=Discount-desc&stars=4,5&currency=ARS");
+  const hotel = { ...tucuman.hotels[0], url: beloTravelHotelUrl(tucuman.hotels[0].id, "2026-10-28", "2026-10-29", 2) };
+  const widget = { id: "h", type: "belo-hotels", destination: tucuman.name, searchUrl: "https://travel.belo.app/", checkedAt: "2026-10-28", checkedDates: ["2026-10-28", "2026-10-29"], adults: 2 };
+  assert.equal(readConversationWidget({ ...widget, hotels: [hotel] })?.type, "belo-hotels");
+  assert.equal(readConversationWidget({ ...widget, hotels: [{ ...hotel, url: "https://www.booking.com/hotel/x" }] }), undefined);
+  assert.equal(findBeloTravelDestination("Bariloche"), undefined);
+});

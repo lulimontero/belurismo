@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AppError, required } from "./security";
 import { beloTools, callBelo } from "./belo";
 import { createCards, listCards } from "./belo-cards";
+import { beloTravelHotelUrl, beloTravelSearchUrl, findBeloTravelDestination } from "./belo-travel";
 import {
   budgetSummary,
   settleExpenses,
@@ -95,7 +96,7 @@ const functions = [
   {
     name: "search_travel",
     description:
-      "Busca información actual y fuentes sobre destinos, hoteles, restaurantes reales, precios, actividades y transporte. Para comparar lugares, pedir páginas web específicas y datos para tarjetas. Google Maps/buscadores no sirven como única fuente: se necesitan sitios consultados del hotel/lugar o fichas detalladas de proveedores. No confirma disponibilidad de Belo Travel. Después de buscar opciones concretas, mostrarlas con present_travel_options.",
+      "Busca información actual y fuentes sobre destinos, restaurantes reales, precios, actividades y transporte. Para comparar lugares, pedir páginas web específicas y datos para tarjetas. Google Maps/buscadores no sirven como única fuente: se necesitan sitios consultados del hotel/lugar o fichas detalladas de proveedores. No confirma disponibilidad de Belo Travel. Después de buscar opciones concretas, mostrarlas con present_travel_options. NO sirve para hoteles: el alojamiento sale sólo de belo_travel_hotels.",
     parameters: {
       type: "object",
       properties: { query: { type: "string" } },
@@ -106,7 +107,7 @@ const functions = [
   {
     name: "present_travel_options",
     description:
-      "Muestra de 1 a 4 opciones reales como tarjetas dentro del chat, también durante la llamada. Usar siempre al recomendar hoteles, restaurantes, actividades, playas o lugares después de search_travel. Cada sourceUrl debe ser la página real consultada, preferentemente oficial y específica, nunca un buscador/Google Maps. El servidor obtiene la foto; nunca aportar URLs inventadas. Incluir pros, contras y datos comprobados. IMPORTANTE: price=null cuando la tarifa se debe consultar o no está publicada; el presupuesto del usuario JAMÁS es un precio del hotel. Sólo usar price si evidence cita el importe publicado en la fuente, con moneda y base. Las tarifas públicas son orientativas, no disponibilidad para fechas sin verificar. stayNights sólo con noches confirmadas; null si no. facts permite ocupación, servicios, horarios o duración; Por confirmar cuando falte evidencia (ofrecer desayuno no prueba que la tarifa lo incluya). No duplicar las tarjetas en la respuesta posterior.",
+      "Muestra de 1 a 4 opciones reales como tarjetas dentro del chat, también durante la llamada. NO acepta hoteles (usar belo_travel_hotels). Usar siempre al recomendar restaurantes, actividades, playas o lugares después de search_travel. Cada sourceUrl debe ser la página real consultada, preferentemente oficial y específica, nunca un buscador/Google Maps. El servidor obtiene la foto; nunca aportar URLs inventadas. Incluir pros, contras y datos comprobados. IMPORTANTE: price=null cuando la tarifa se debe consultar o no está publicada; el presupuesto del usuario JAMÁS es un precio del hotel. Sólo usar price si evidence cita el importe publicado en la fuente, con moneda y base. Las tarifas públicas son orientativas, no disponibilidad para fechas sin verificar. stayNights sólo con noches confirmadas; null si no. facts permite ocupación, servicios, horarios o duración; Por confirmar cuando falte evidencia (ofrecer desayuno no prueba que la tarifa lo incluya). No duplicar las tarjetas en la respuesta posterior.",
     parameters: z.toJSONSchema(travelOptionsInputSchema, {
       // OpenAI strict function schemas do not support JSON Schema's URI format.
       // Keep URL validation on the server and use a plain string in the tool schema.
@@ -166,6 +167,22 @@ const functions = [
     },
   },
   {
+    name: "belo_travel_hotels",
+    description:
+      "Muestra en el chat los hoteles de belo travel para un destino, con el estilo del listado de belo travel y el link a cada ficha y a la búsqueda. Es la ÚNICA fuente de hoteles: usala siempre que el usuario busque alojamiento. Los precios son los publicados en belo travel el día de consulta para una noche de esas fechas; para otras fechas son referencia y se confirman en belo travel. Fechas en formato YYYY-MM-DD; null si todavía no las dio.",
+    parameters: {
+      type: "object",
+      properties: {
+        destination: { type: "string" },
+        checkIn: { type: ["string", "null"] },
+        checkOut: { type: ["string", "null"] },
+        adults: { type: ["integer", "null"] },
+      },
+      required: ["destination", "checkIn", "checkOut", "adults"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "belo_list_cards",
     description:
       "Lista las tarjetas de la organización en belo con titular, últimos 4 dígitos, estado y el tope registrado por Turi.",
@@ -210,7 +227,7 @@ export async function executeTool(
 ) {
   if (name === "show_planning_step") {
     const context = planningContextSchema.parse(args);
-    if (context.step === "ready") return { status: "ready_for_search", context, note: "Los datos ya están completos. Buscá opciones actuales y mostralas con present_travel_options; no hace falta otro control de entrada." };
+    if (context.step === "ready") return { status: "ready_for_search", context, note: "Los datos ya están completos. Para alojamiento llamá belo_travel_hotels con destino, fechas y adultos; para comida, actividades o lugares usá search_travel y present_travel_options. No hace falta otro control de entrada." };
     emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "planning", context } });
     return { status: "awaiting_user_input", context, note: "El control ya está en el chat. Pedí brevemente que elija el dato; no sigas a otra etapa hasta que responda." };
   }
@@ -287,7 +304,10 @@ export async function executeTool(
         fields: parsed.error.issues.map((issue) => ({ field: issue.path.join("."), message: issue.message })),
       };
     }
-    const { options } = parsed.data;
+    // Lodging is shown only by belo_travel_hotels, in belo travel's own listing style.
+    const options = parsed.data.options.filter((option) => option.kind !== "hotel");
+    if (!options.length)
+      return { error: "Los hoteles se muestran sólo con belo_travel_hotels. Si ya lo llamaste, no los repitas como tarjetas." };
     const checkedAt = new Date().toISOString();
     const cards: TravelOption[] = await Promise.all(
       options.map(async (option) => ({
@@ -330,6 +350,37 @@ export async function executeTool(
       ? { holder: r.holder, lastFour: r.card.lastFour, status: r.card.status, limitUsd: r.card.limitUsd }
       : { holder: r.holder, lastFour: null, status: "failed", limitUsd: input.limitUsd, error: r.error?.slice(0, 200) }) } });
     return { results, note: "Las tarjetas ya se muestran en el chat. Resumí en una o dos líneas cuáles se crearon y cuáles fallaron." };
+  }
+  if (name === "belo_travel_hotels") {
+    const input = z.object({
+      destination: z.string().trim().min(2).max(120),
+      checkIn: z.iso.date().nullable(),
+      checkOut: z.iso.date().nullable(),
+      adults: z.number().int().min(1).max(20).nullable(),
+    }).parse(args);
+    const destination = findBeloTravelDestination(input.destination);
+    if (!destination)
+      return {
+        found: false,
+        searchUrl: "https://travel.belo.app/",
+        note: "Turi todavía no tiene hoteles de belo travel relevados para este destino. No recomiendes hoteles de otras fuentes: ofrecé buscarlo directamente en belo travel con el enlace.",
+      };
+    const [checkIn, checkOut] = input.checkIn && input.checkOut && input.checkOut > input.checkIn
+      ? [input.checkIn, input.checkOut] : destination.checkedDates;
+    const adults = input.adults ?? 2;
+    const searchUrl = destination.placeId ? beloTravelSearchUrl(destination, checkIn, checkOut, adults) : "https://travel.belo.app/";
+    const hotels = destination.hotels.map((hotel) => ({ ...hotel, url: beloTravelHotelUrl(hotel.id, checkIn, checkOut, adults) }));
+    emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "belo-hotels", destination: destination.name, searchUrl,
+      checkedAt: destination.checkedAt, checkedDates: destination.checkedDates, adults, hotels } });
+    return {
+      found: true,
+      destination: destination.name,
+      searchUrl,
+      checkedAt: destination.checkedAt,
+      pricesFor: `1 noche, ${destination.checkedDates[0]} a ${destination.checkedDates[1]}, 1 habitación, 2 adultos, ARS con impuestos`,
+      hotels: hotels.map(({ name, address, stars, ratingLabel, rating, price, listPrice, discount }) => ({ name, address, stars, rating: `${ratingLabel} ${rating}`, priceArsPerNight: price, listPriceArs: listPrice, discount: `${discount}%` })),
+      note: "Los hoteles ya se muestran en el chat. No los repitas: compará en 2 o 3 frases según el presupuesto y preferencias, aclarando que el precio es el publicado en belo travel el día de consulta y que la disponibilidad para sus fechas se confirma en belo travel.",
+    };
   }
   if (name === "belo_list_cards") {
     const cards = await listCards();
@@ -465,6 +516,8 @@ export async function runAgent(
         type: "activity",
         text: call.name === "belo_create_cards"
           ? "Emitiendo las tarjetas con belo…"
+          : call.name === "belo_travel_hotels"
+          ? "Buscando hoteles en belo travel…"
           : call.name.startsWith("belo")
           ? "Consultando tu conexión con Belo…"
           : call.name === "search_travel"
