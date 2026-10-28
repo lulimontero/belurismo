@@ -37,6 +37,14 @@ const MONTHS = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ];
+// Full names and the usual abbreviations ("dic", "sept", "set.").
+const MONTH_NAME = String.raw`ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|may(?:o)?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:t(?:iembre)?)?|set(?:iembre)?|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?`;
+function monthNumber(name: string) {
+  const clean = name.toLowerCase().replace(/\.$/, "");
+  if (!new RegExp(`^(?:${MONTH_NAME})$`, "i").test(clean)) return 0;
+  const prefix = clean.slice(0, 3).replace("set", "sep");
+  return MONTHS.findIndex((month) => month.startsWith(prefix)) + 1;
+}
 const KNOWN_DESTINATIONS: [RegExp, string][] = [
   [/\b(?:florian[oó]polis|floripa)\b/i, "Florianópolis"],
   [/\b(?:san pablo|s[aã]o paulo)\b/i, "São Paulo"],
@@ -124,12 +132,12 @@ function nextOccurrence(today: string, startDay: number, startMonth: number, end
 function dateRangeFrom(text: string, today = todayIso()): Pick<ParsedRequest, "startDate" | "endDate" | "nights" | "datesMentioned" | "yearInferred"> {
   const rawIso = text.match(/\b(\d{4}-\d{2}-\d{2})\s*(?:a|al|hasta|→|—|–)\s*(\d{4}-\d{2}-\d{2})\b/i);
   const numeric = text.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(?:a|al|hasta|→|—|–)\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\b/i);
-  const sameMonth = text.match(/\b(\d{1,2})\s*(?:al|a|hasta)\s*(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+(?:de\s+)?(\d{4})\b/i);
-  const mixedMonths = text.match(/\b(\d{1,2})\s+de\s+([a-záéíóúñ]+)(?:\s+(?:de\s+)?(\d{4}))?\s*(?:al|a|hasta)\s*(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+(?:de\s+)?(\d{4})\b/i);
-  const month = `(${MONTHS.join("|")})`;
+  const sameMonth = text.match(/\b(\d{1,2})\s*(?:al|a|hasta)\s*(\d{1,2})\s+de\s+([a-záéíóúñ]+)\.?\s+(?:de\s+)?(\d{4})\b/i);
+  const mixedMonths = text.match(/\b(\d{1,2})\s+de\s+([a-záéíóúñ]+)\.?(?:\s+(?:de\s+)?(\d{4}))?\s*(?:al|a|hasta)\s*(\d{1,2})\s+de\s+([a-záéíóúñ]+)\.?\s+(?:de\s+)?(\d{4})\b/i);
+  const month = `(${MONTH_NAME})`;
   const notCount = String.raw`(?!\s*(?:adult|menor|niñ|person|noche|d[ií]a|hu[eé]sped))`;
   const yearless = [...text.matchAll(new RegExp(
-    String.raw`\b(\d{1,2})(?:\s+de\s+${month})?\s*(?:al|a|hasta(?:\s+el)?|y(?:\s+el)?|-|–|—)\s*(\d{1,2})\b${notCount}(?:\s+de\s+${month})?`, "gi"))]
+    String.raw`\b(\d{1,2})(?:\s+de\s+${month}\b\.?)?\s*(?:al|a|hasta(?:\s+el)?|y(?:\s+el)?|-|–|—)\s*(\d{1,2})\b${notCount}(?:\s+de\s+${month}\b\.?)?`, "gi"))]
     .find((match) => match[2] || match[4]);
   const numericYearless = text.match(/\b(\d{1,2})\/(\d{1,2})\s*(?:al|a|hasta|→|—|–|-)\s*(\d{1,2})\/(\d{1,2})\b(?!\/)/i);
   let startDate: string | undefined, endDate: string | undefined;
@@ -138,12 +146,12 @@ function dateRangeFrom(text: string, today = todayIso()): Pick<ParsedRequest, "s
     startDate = isoDate(+numeric[3], +numeric[2], +numeric[1]);
     endDate = isoDate(+numeric[6], +numeric[5], +numeric[4]);
   } else if (sameMonth) {
-    const month = MONTHS.indexOf(sameMonth[3].toLowerCase()) + 1;
+    const month = monthNumber(sameMonth[3]);
     startDate = isoDate(+sameMonth[4], month, +sameMonth[1]);
     endDate = isoDate(+sameMonth[4], month, +sameMonth[2]);
   } else if (mixedMonths) {
-    const startMonth = MONTHS.indexOf(mixedMonths[2].toLowerCase()) + 1;
-    const endMonth = MONTHS.indexOf(mixedMonths[5].toLowerCase()) + 1;
+    const startMonth = monthNumber(mixedMonths[2]);
+    const endMonth = monthNumber(mixedMonths[5]);
     const endYear = +mixedMonths[6];
     // An omitted first year is unambiguous within the same calendar year.
     // Crossing New Year needs both years, rather than quietly inventing one.
@@ -151,10 +159,10 @@ function dateRangeFrom(text: string, today = todayIso()): Pick<ParsedRequest, "s
     if (startYear) startDate = isoDate(startYear, startMonth, +mixedMonths[1]);
     endDate = isoDate(endYear, endMonth, +mixedMonths[4]);
   } else if (yearless) {
-    const startMonth = MONTHS.indexOf((yearless[2] ?? yearless[4]).toLowerCase()) + 1;
+    const startMonth = monthNumber(yearless[2] ?? yearless[4]);
     const startDay = +yearless[1], endDay = +yearless[3];
     // "del 2 de diciembre al 7" keeps the month; "del 28 de diciembre al 3" rolls over.
-    const endMonth = yearless[4] ? MONTHS.indexOf(yearless[4].toLowerCase()) + 1
+    const endMonth = yearless[4] ? monthNumber(yearless[4])
       : endDay > startDay ? startMonth : startMonth % 12 + 1;
     [startDate, endDate] = nextOccurrence(today, startDay, startMonth, endDay, endMonth);
   } else if (numericYearless) {
