@@ -47,6 +47,7 @@ import {
   receiveTelegram,
   sendDueReminders,
 } from "@/lib/turi/telegram";
+import { receiveWhatsapp } from "@/lib/turi/whatsapp";
 import { turiInstructions } from "@/lib/turi/prompt";
 import { exchangeQuote } from "@/lib/turi/exchange";
 
@@ -215,6 +216,7 @@ export async function POST(request: Request) {
   try {
     const path = pathOf(request);
     if (path === "telegram/webhook") return await receiveTelegram(request);
+    if (path === "whatsapp/webhook") return await receiveWhatsapp(request);
     assertSameOrigin(request);
     const id = await sessionId(),
       ip =

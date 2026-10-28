@@ -1,0 +1,33 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { parseIncoming, toWhatsappText } from "../lib/turi/whatsapp";
+
+const key = (extra = {}) => ({ id: "ABC", remoteJid: "5493810000000@s.whatsapp.net", fromMe: false, ...extra });
+
+test("parseIncoming reads text, captions and media", () => {
+  assert.equal(parseIncoming({ key: key(), message: { conversation: " hola " } })?.text, "hola");
+  assert.equal(parseIncoming({ key: key(), message: { extendedTextMessage: { text: "che" } } })?.text, "che");
+  const image = parseIncoming({ key: key(), message: { imageMessage: { mimetype: "image/png", caption: "ticket" }, base64: "AAAA" } });
+  assert.deepEqual(image?.media, { kind: "file", type: "image/png", name: "comprobante.jpg", base64: "AAAA" });
+  assert.equal(image?.text, "ticket");
+  const audio = parseIncoming({ key: key(), message: { audioMessage: { mimetype: "audio/ogg; codecs=opus" }, base64: "BBBB" } });
+  assert.equal(audio?.media?.kind, "audio");
+});
+
+test("parseIncoming ignores groups, own messages and empty events", () => {
+  assert.equal(parseIncoming({ key: key({ remoteJid: "123-456@g.us" }), message: { conversation: "x" } }), undefined);
+  assert.equal(parseIncoming({ key: key({ remoteJid: "status@broadcast" }), message: { conversation: "x" } }), undefined);
+  assert.equal(parseIncoming({ key: key({ fromMe: true }), message: { conversation: "x" } }), undefined);
+  assert.equal(parseIncoming({ key: key(), message: {} }), undefined);
+});
+
+test("parseIncoming prefers the phone JID over a LID", () => {
+  const lid = parseIncoming({ key: key({ remoteJid: "999@lid", remoteJidAlt: "5493810000000@s.whatsapp.net" }), message: { conversation: "x" } });
+  assert.equal(lid?.jid, "5493810000000@s.whatsapp.net");
+  assert.equal(parseIncoming({ key: key({ remoteJid: "999@lid" }), message: { conversation: "x" } })?.jid, "999@lid");
+});
+
+test("toWhatsappText converts markdown", () => {
+  assert.equal(toWhatsappText("**Hotel** en [Booking](https://b.com/x)"), "*Hotel* en Booking: https://b.com/x");
+  assert.equal(toWhatsappText("## Día 1"), "*Día 1*");
+});
