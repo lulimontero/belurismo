@@ -1,6 +1,6 @@
 # Turi: activación y alcance
 
-La burbuja de la landing abre una conversación real preparada para OpenAI. No hay respuestas prefabricadas, datos ficticios ni simulaciones de pagos en el producto. Sin credenciales, la interfaz informa el estado pendiente y permite organizar el viaje manualmente.
+La burbuja de la landing abre una conversación real preparada para OpenAI. El chat procesa las solicitudes con el modelo y los paneles calculan sus valores con los datos del viaje. No se cargan datos ficticios ni simulaciones de pagos en el producto. Sin credenciales, la interfaz informa el estado pendiente y permite organizar el viaje manualmente.
 
 ## Qué está implementado
 
@@ -14,6 +14,44 @@ La burbuja de la landing abre una conversación real preparada para OpenAI. No h
 - Grupo organizativo con adultos y consentimiento confirmado, belotags voluntarios, partes iguales o personalizadas y balance por centavos. No son sub-wallets ni cuentas administradas.
 - Itinerario, recordatorios, alertas de umbral cambiario, resumen por categorías y exportación JSON. Los datos se guardan localmente; con Redis también se sincronizan con la sesión del servidor.
 - Propuestas del agente para revisión antes de registrar datos. El asistente no inventa reservas, comisiones ni operaciones confirmadas.
+
+## Respuestas visuales e interacción dentro del chat
+
+Los patrones de `turi-pretrip.html` y `turi-posttrip.html` se portaron a componentes React dentro de la respuesta de Turi: selección de fechas, viajeros, edades y presupuesto; respuestas rápidas; barras de presupuesto y gasto diario; listas de preparación; selección de plantilla y puntajes. Se conservan sus interacciones útiles, pero los destinos, gastos, tasas, promociones, saldos y acciones simuladas de esos archivos no se cargan como datos reales.
+
+### Opciones compactas y detalle
+
+`TravelOptions` muestra opciones compactas con miniatura de 78 px, nombre, zona, referencia de precio y un pro y un punto a considerar. Los textos largos se presentan como extractos con puntos suspensivos; el texto completo permanece disponible en la descripción accesible y en el detalle. Se usan dos columnas sólo cuando caben dos tarjetas de al menos 250 px; en móvil se apilan sin foto de portada que ocupe toda la conversación.
+
+Pulsar la tarjeta, o activarla con teclado, abre un `dialog` nativo con foto grande, resumen, moneda y base del precio, estimación por noches cuando corresponde, datos, pros/contras completos, limitaciones, fuente y fecha de consulta. El detalle tiene desplazamiento interno y se cierra con Escape, el botón de cierre o el fondo; el foco vuelve a la tarjeta. “Me interesa” cierra el detalle y envía un mensaje contextual para seguir evaluando: no reserva ni confirma una compra.
+
+Las fotos corresponden a la fuente consultada. Ante ausencia o error, se muestra “Sin foto” o “Foto no disponible” y un acceso a la fuente; no se intercala una imagen genérica. Un enlace citado por la búsqueda no se convierte automáticamente en una recomendación ni en una tarjeta.
+
+### Paneles del viaje
+
+Los mensajes admiten descriptores `widgets` validados en `lib/turi/conversation-widgets.ts`. `ConversationWidgets` renderiza los formularios de previa, las respuestas rápidas y `ConversationPanels`; la herramienta `show_trip_panel` permite al agente mostrar un panel. Los cálculos de estos últimos salen de `buildConversationPanels(state)`, en `lib/turi/conversation-panels.ts`, y reflejan el estado actual del viaje incluso cuando se vuelve a una respuesta anterior.
+
+| Panel | Datos y acciones reales |
+| --- | --- |
+| `summary` | Total registrado, tu parte, lo pagado por vos, presupuesto, reserva para la vuelta, promedio, tope diario y categorías. El margen organizativo no se presenta como saldo bancario. |
+| `daily` | Barras por fecha, línea del tope y excesos calculados. Un día sin registros no equivale a gasto cero confirmado. La recomendación usa el promedio registrado + 5%, redondeado; es una referencia histórica, no un precio futuro. |
+| `group` | Gastos repartidos y transferencias calculadas por centavos. Permite preparar borradores de recordatorios y pedir revisión de evidencia de pago. No marca automáticamente una deuda como saldada. |
+| `recap` | Vista previa sólo de gastos comunes y sus agregados. “Copiar resumen” escribe realmente en el portapapeles; no lo envía a un grupo ni incluye gastos personales, saldos o contactos. |
+| `checklist` | Ocho verificaciones de previa: documentación, asistencia, conectividad, pagos, reservas, check-in, equipaje/cuidado personal y copias. Sólo el usuario marca lo que verificó. |
+| `template` | Selección de itinerario, lugares consultados elegidos como favoritos, topes por categoría e integrantes con permiso adulto confirmado. Inicia una descarga JSON real con `importReview: true`; no crea una plantilla en la nube. Los integrantes exportados llevan sólo ID y nombre. |
+| `feedback` | Puntajes de 1 a 5 para lugares o actividades del propio viaje. Se puede agregar un nombre manualmente; recién al elegir estrellas se guarda el puntaje. El aporte anónimo tiene consentimiento separado y revocable, y su servicio externo continúa pendiente. |
+| `leftover` | Recibe un monto aportado por el usuario, con hasta dos decimales, para consultar conversión a ARS/USD o planificar conservarlo. No deduce el saldo de una cuenta ni inventa comisiones. |
+| `price-review` | Selección de un gasto existente para pedir fuentes comparables. Tener un gasto alto no prueba un cobro indebido. |
+| `next-trip` | Promedio histórico y margen del 5% como orientación; los destinos se eligen para iniciar una búsqueda nueva, sin factores de costo inventados. |
+| `post-trip-notice` | Preferencia de avisos, conexiones pendientes y solicitud de una propuesta de recordatorio dentro de dos días. Un botón no confirma que exista un envío programado. |
+
+### Qué se conserva y qué sigue pendiente
+
+Los descriptores de widgets y opciones se conservan en el historial validado. En `state.assistantPreferences` se guardan las verificaciones de previa, las selecciones de plantilla/favoritos, los puntajes y `anonymousPriceConsent`. `alertsConsent` guarda por separado la preferencia de avisos. Estos datos siguen el almacenamiento local y, si está configurado Redis, la sincronización de la sesión existente. No se marcan verificaciones ni consentimientos a partir de una búsqueda o una respuesta del modelo.
+
+El portapapeles y la descarga de plantilla actúan en el navegador. La plantilla descargada es un archivo para revisar y reutilizar; no hay importación automática de archivos JSON ni recuperación de plantillas desde una cuenta en la nube. “Planificar con esta plantilla” retoma la conversación con las secciones elegidas y pide revisar fechas, destino y presupuesto antes de crear otro plan.
+
+Siguen pendientes la publicación de aportes anónimos, la disponibilidad comercial de Belo Travel, la operación financiera con el MCP de Belo y la validación de Belo Air. Los avisos externos necesitan Telegram vinculado, Redis y un planificador configurado. Las conexiones Google requieren sus credenciales y permisos descritos más abajo. Conservar una preferencia o preparar un borrador no activa ninguno de esos servicios.
 
 ## Activar chat y voz
 

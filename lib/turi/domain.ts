@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { travelOptionSchema } from "./travel-options";
+import { conversationWidgetSchema } from "./conversation-widgets";
 
 export const currencies = [
   "ARS",
@@ -88,6 +89,11 @@ export const workspaceSchema = z.object({
   itinerary: z.array(itinerarySchema).max(300).default([]),
   reminders: z.array(reminderSchema).max(100).default([]),
   alertsConsent: z.boolean().default(false),
+  assistantPreferences: z.object({
+    checklist: z.record(z.string(), z.boolean()).default({}),
+    ratings: z.record(z.string(), z.number().int().min(1).max(5)).default({}),
+    anonymousPriceConsent: z.boolean().default(false),
+  }).default({ checklist: {}, ratings: {}, anonymousPriceConsent: false }),
   rateAlerts: z
     .array(
       z.object({
@@ -123,6 +129,7 @@ export const messageSchema = z.object({
     url: z.url().max(2000).refine((url) => /^https?:\/\//.test(url)),
   })).max(20).optional(),
   options: z.array(travelOptionSchema).max(12).optional(),
+  widgets: z.array(conversationWidgetSchema).max(8).optional(),
 });
 export type Message = z.infer<typeof messageSchema>;
 export type Connection = {
@@ -151,6 +158,7 @@ export const emptyWorkspace = (): Workspace => ({
   itinerary: [],
   reminders: [],
   alertsConsent: false,
+  assistantPreferences: { checklist: {}, ratings: {}, anonymousPriceConsent: false },
   rateAlerts: [],
 });
 export const money = (value: number, currency = "ARS") =>

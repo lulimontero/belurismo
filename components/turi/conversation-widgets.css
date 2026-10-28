@@ -1,0 +1,8 @@
+.turi-conversation-widgets { display: grid; gap: 12px; margin-top: 12px; width: 100%; min-width: 0; }
+.turi-quick-replies, .turi-chat-modes { display: flex; flex-wrap: wrap; gap: 7px; }
+.turi-quick-replies button, .turi-chat-modes button { border: 1px solid #dce1d5; border-radius: 999px; padding: 8px 12px; background: #fff; color: #3c4930; font-size: 12px; line-height: 1.4; min-height: 36px; cursor: pointer; }
+.turi-quick-replies button:hover:not(:disabled), .turi-chat-modes button:hover:not(:disabled), .turi-quick-replies .selected { background: #e9f0df; border-color: #aebf9b; }
+.turi-quick-replies button:disabled, .turi-chat-modes button:disabled { opacity: .55; cursor: default; }
+.turi-chat-modes { padding: 0 4px 9px; }
+.turi-chat-modes button { font-size: 11px; min-height: 30px; padding: 5px 10px; background: transparent; }
+.turi-quick-replies button:focus-visible, .turi-chat-modes button:focus-visible { outline: 2px solid #687d54; outline-offset: 2px; }

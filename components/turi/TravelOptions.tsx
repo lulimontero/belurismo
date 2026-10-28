@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   ArrowUpRightIcon,
   CheckIcon,
   ImageIcon,
   MapPinIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import type { TravelOption } from "@/lib/turi/travel-options";
 import "./travel-options.css";
@@ -33,18 +34,12 @@ function formatMoney(amount: number, currency: string) {
   }).format(amount);
 }
 
-function OptionPhoto({ option }: { option: TravelOption }) {
+function OptionPhoto({ option, compact = false }: { option: TravelOption; compact?: boolean }) {
   const [failedUrl, setFailedUrl] = useState<string>();
   const image = option.image;
   const hasImage = image && failedUrl !== image.url;
-  return (
-    <a
-      className={`turi-option-photo ${hasImage ? "" : "unavailable"}`}
-      href={image?.sourceUrl || option.sourceUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Ver fotos de ${option.name} en la fuente`}
-    >
+  const content = (
+    <>
       {hasImage ? (
         // These source images are dynamic. Load them directly without allowing arbitrary hosts in the image optimizer.
         <img
@@ -59,25 +54,37 @@ function OptionPhoto({ option }: { option: TravelOption }) {
         />
       ) : (
         <span className="turi-option-photo-fallback">
-          <ImageIcon size={25} aria-hidden="true" />
-          <strong>Foto no disponible</strong>
-          <span>
+          <ImageIcon size={compact ? 20 : 25} aria-hidden="true" />
+          <strong>{compact ? "Sin foto" : "Foto no disponible"}</strong>
+          {!compact && <span>
             Ver fotos en la fuente <ArrowUpRightIcon size={12} aria-hidden="true" />
-          </span>
+          </span>}
         </span>
       )}
-    </a>
+    </>
+  );
+  if (compact) return <span className="turi-option-thumb" aria-hidden="true">{content}</span>;
+  return (
+    <a
+      className={`turi-option-photo ${hasImage ? "" : "unavailable"}`}
+      href={image?.sourceUrl || option.sourceUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Ver fotos de ${option.name} en la fuente`}
+    >{content}</a>
   );
 }
 
-function OptionCard({
+function OptionDetails({
   option,
   disabled,
   onChoose,
+  titleId,
 }: {
   option: TravelOption;
   disabled: boolean;
   onChoose: (message: string) => void;
+  titleId: string;
 }) {
   const price = option.price;
   const checkedAt = new Intl.DateTimeFormat("es-AR", {
@@ -92,7 +99,7 @@ function OptionCard({
         <OptionPhoto option={option} />
         <div className="turi-option-intro">
           <span className="turi-option-kind">{kindLabels[option.kind]}</span>
-          <h3>{option.name}</h3>
+          <h3 id={titleId}>{option.name}</h3>
           <p className="turi-option-location">
             <MapPinIcon size={13} aria-hidden="true" />
             {option.location}
@@ -169,6 +176,95 @@ function OptionCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function excerpt(text: string) {
+  if (text.length <= 55) return text;
+  const end = text.lastIndexOf(" ", 52);
+  return `${text.slice(0, end > 25 ? end : 52).trimEnd()}…`;
+}
+
+function OptionCard({ option, disabled, onChoose }: {
+  option: TravelOption;
+  disabled: boolean;
+  onChoose: (message: string) => void;
+}) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const pro = option.pros[0];
+  const con = option.cons[0];
+  return (
+    <>
+      <button
+        type="button"
+        ref={trigger}
+        className="turi-option-tile"
+        aria-label={`Ver detalles de ${option.name}, en ${option.location}. ${option.price ? `${formatMoney(option.price.amount, option.price.currency)} ${priceBasis[option.price.basis]}` : "Precio a consultar"}. A favor: ${pro}. A considerar: ${con}.`}
+        aria-haspopup="dialog"
+        onClick={() => dialog.current?.showModal()}
+      >
+        <span className="turi-option-tile-heading">
+          <OptionPhoto option={option} compact />
+          <span className="turi-option-tile-intro">
+            <strong title={option.name}>{option.name}</strong>
+            <span className="turi-option-tile-location" title={option.location}>{option.location}</span>
+            <span className="turi-option-tile-price">
+              {option.price
+                ? `${formatMoney(option.price.amount, option.price.currency)} ${priceBasis[option.price.basis]}`
+                : "Precio a consultar"}
+            </span>
+          </span>
+        </span>
+        <span className="turi-option-tile-comparison">
+          <span title={pro}><b>A favor</b> {excerpt(pro)}</span>
+          <span title={con}><b>A considerar</b> {excerpt(con)}</span>
+        </span>
+        <span className="turi-option-tile-more">
+          Ver detalle completo <ArrowUpRightIcon size={13} aria-hidden="true" />
+        </span>
+      </button>
+      <dialog
+        ref={dialog}
+        className="turi-option-dialog"
+        aria-labelledby={titleId}
+        onClose={() => trigger.current?.focus({ preventScroll: true })}
+        onCancel={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          dialog.current?.close();
+        }}
+        onClick={(event) => {
+          if (event.target !== event.currentTarget) return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)
+            event.currentTarget.close();
+        }}
+      >
+        <div className="turi-option-dialog-bar">
+          <span>Una mirada más cerca</span>
+          <button
+            type="button"
+            autoFocus
+            className="turi-option-dialog-close"
+            aria-label="Cerrar detalle"
+            onClick={() => dialog.current?.close()}
+          ><XIcon size={19} aria-hidden="true" /></button>
+        </div>
+        <div className="turi-option-dialog-scroll">
+          <OptionDetails
+            option={option}
+            disabled={disabled}
+            titleId={titleId}
+            onChoose={(message) => {
+              dialog.current?.close();
+              onChoose(message);
+            }}
+          />
+        </div>
+      </dialog>
+    </>
   );
 }
 

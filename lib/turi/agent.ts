@@ -16,6 +16,9 @@ import { turiInstructions } from "./prompt";
 import { exchangeQuote } from "./exchange";
 import { resolveOptionImage } from "./option-media";
 import { optionToText, publishedOptionPrice, travelOptionsInputSchema, type TravelOption } from "./travel-options";
+import { buildConversationPanels, preTripChecks } from "./conversation-panels";
+import { panelKinds, planningContextSchema } from "./conversation-widgets";
+import { replyWithReferenceFlow } from "./conversation-flow";
 
 export const openaiClient = () =>
   new OpenAI({
@@ -62,6 +65,16 @@ export function validateAttachments(files: Attachment[]) {
     throw new AppError("Los adjuntos juntos deben pesar hasta 2,5 MB.", 413);
 }
 const functions = [
+  {
+    name: "show_planning_step",
+    description: "Muestra el control interactivo del próximo dato faltante de la previa al viaje: destino, calendario entrada/salida, viajeros, edades de menores o presupuesto. Es la conversación paso a paso del HTML, también disponible durante voz. Usar sólo datos explícitos; no inventar año ni asumir el presupuesto completo como hotelero. El usuario elige en el chat y responde con el botón.",
+    parameters: z.toJSONSchema(planningContextSchema),
+  },
+  {
+    name: "show_trip_panel",
+    description: "Muestra dentro del chat los paneles interactivos de los HTML de Turi con datos del viaje del usuario: summary (gastos/categorías), daily (día por día), group (deudas), recap (compartible sólo gastos comunes), checklist (previa), template (conservar viaje), feedback (opiniones), leftover (elegir qué hacer con remanente), price-review (revisar comprobantes), next-trip o post-trip-notice. Los paneles tienen botones reales para seguir la conversación; no inventan saldos ni pagos. Resumí en una o dos frases y dejá los detalles al panel. En Telegram recibís los datos para responder por texto.",
+    parameters: { type: "object", properties: { kind: { type: "string", enum: panelKinds } }, required: ["kind"], additionalProperties: false },
+  },
   {
     name: "exchange_quote",
     description:
@@ -173,6 +186,25 @@ export async function executeTool(
   state: Workspace,
   emit: Emit,
 ) {
+  if (name === "show_planning_step") {
+    const context = planningContextSchema.parse(args);
+    if (context.step === "ready") return { status: "ready_for_search", context, note: "Los datos ya están completos. Buscá opciones actuales y mostralas con present_travel_options; no hace falta otro control de entrada." };
+    emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "planning", context } });
+    return { status: "awaiting_user_input", context, note: "El control ya está en el chat. Pedí brevemente que elija el dato; no sigas a otra etapa hasta que responda." };
+  }
+  if (name === "show_trip_panel") {
+    const kind = z.enum(panelKinds).parse(args.kind);
+    emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "panel", kind } });
+    const panels = buildConversationPanels(state);
+    const data = kind === "post-trip-notice" ? panels.postTripNotice
+      : kind === "price-review" ? panels.priceReview
+      : kind === "next-trip" ? panels.nextTrip
+      : kind === "template" ? panels.checklist
+      : kind === "checklist" ? { items: preTripChecks.map(item => ({ ...item, checked: Boolean(state.assistantPreferences.checklist[`pretrip:${item.id}`]) })) }
+      : kind === "feedback" ? { ratings: state.assistantPreferences.ratings, note: "Guardadas para el usuario; no se publican opiniones ni precios sin un servicio y permiso reales." }
+      : panels[kind];
+    return { status: "shown_in_chat", kind, data, note: "Los controles ya están en el chat. No afirmes que se enviaron mensajes o se movió dinero." };
+  }
   if (name === "exchange_quote") {
     const result = await exchangeQuote(args);
     emit({
@@ -245,10 +277,18 @@ export async function executeTool(
       })),
     );
     emit({ type: "travel_options", options: cards });
+    if (cards.every((option) => option.kind === "hotel")) emit({
+      type: "widget", widget: { id: crypto.randomUUID(), type: "quick-replies", choices: [
+        { label: "Cambiar presupuesto", text: "Quiero cambiar el presupuesto del alojamiento. Mostrame las opciones de presupuesto otra vez." },
+        { label: "Comer cerca", text: "¿Dónde puedo comer cerca del hotel que elegí como base? Si todavía no elegí, preguntame cuál." },
+        { label: "Playas y actividades", text: "Recomendame playas y actividades para mi grupo cerca de la base que elegí. Si todavía no elegí, preguntame cuál." },
+        { label: "Checklist", text: "Checklist antes de viajar" },
+      ] },
+    });
     return {
       status: "shown_in_chat",
       options: cards.map(({ name, price, image }) => ({ name, price, hasPhoto: Boolean(image) })),
-      message: "Las tarjetas ya se mostraron. Resumí la comparación y preguntá el próximo paso; no repitas todos los datos. La disponibilidad sigue por confirmar.",
+      message: "Las tarjetas ya se mostraron. Resumí la comparación y preguntá el próximo paso; no repitas todos los datos. hasPhoto indica que se encontró una imagen en la fuente, no garantiza su carga en el navegador: no afirmes que todas tienen fotos. La disponibilidad sigue por confirmar.",
     };
   }
   if (name === "trip_summary")
@@ -301,6 +341,7 @@ export async function runAgent(
   },
   emit: Emit,
 ) {
+  if (!input.attachments?.length && !input.channel?.includes("telegram") && replyWithReferenceFlow(input.messages, input.state, emit)) return;
   const client = openaiClient(),
     connections = await connectionsFor(input.id);
   const history: ResponseInput = input.messages.map((message) => ({

@@ -12,6 +12,7 @@ import {
   type LocalAction,
 } from "@/lib/turi/domain";
 import { mergeTravelOptions, optionToText, readTravelOptions } from "@/lib/turi/travel-options";
+import { readConversationWidget } from "@/lib/turi/conversation-widgets";
 
 export async function api<T = Record<string, unknown>>(
   path: string,
@@ -155,13 +156,14 @@ export function useTuri() {
     const timer = setTimeout(() => {
       const slim = messages
         .slice(-30)
-        .map(({ id, role, text, sources, attachments, options }) => ({
+        .map(({ id, role, text, sources, attachments, options, widgets }) => ({
           id,
           role,
           text,
           sources,
           attachments,
           options,
+          widgets,
         }));
       try {
         localStorage.setItem(
@@ -280,6 +282,12 @@ export function useTuri() {
             message.id === assistantId ? { ...message, options: mergeTravelOptions(message.options || [], options) } : message,
           ));
       }
+      if (event.type === "widget" && assistantId) {
+        const widget = readConversationWidget(event.widget);
+        if (widget) setMessages((list) => list.map((message) => message.id === assistantId ? {
+          ...message, widgets: [...(message.widgets || []).filter((existing) => existing.id !== widget.id), widget].slice(-8),
+        } : message));
+      }
       if (event.type === "proposal")
         setProposals((list) => [...list, event.action as LocalAction]);
       if (event.type === "belo_review")
@@ -355,7 +363,7 @@ export function useTuri() {
         setBusy(false);
         setActivity("");
         request.current = null;
-        setMessages((list) => list.filter((m) => m.text || m.options?.length || m.sources?.length || m.role === "user"));
+        setMessages((list) => list.filter((m) => m.text || m.options?.length || m.widgets?.length || m.sources?.length || m.role === "user"));
       }
     },
     [busy, status?.ai, location, handleEvent],

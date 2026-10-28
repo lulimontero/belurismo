@@ -202,7 +202,7 @@ export function useRealtime(turi: TuriController) {
                   state: current.current.state,
                 });
                 if (attempt !== generation.current) return;
-                if (result.events.some((e) => e.type === "source" || e.type === "travel_options")) {
+                if (result.events.some((e) => e.type === "source" || e.type === "travel_options" || e.type === "widget")) {
                   if (!visualTurn.current) {
                     const id = crypto.randomUUID();
                     visualTurn.current = id;

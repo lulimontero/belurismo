@@ -24,20 +24,21 @@ import { api, type TuriController } from "./useTuri";
 import type { VoiceController } from "./useRealtime";
 import type { Tab } from "./TuriWorkspace";
 import TuriMark from "./TuriMark";
+import ConversationWidgets from "./ConversationWidgets";
 import TravelOptions from "./TravelOptions";
 
 const suggestions = [
   {
-    title: "Mi próximo destino",
-    text: "Quiero organizar un viaje. Ayudame a elegir destino y armar un plan según mi presupuesto.",
+    title: "Antes del viaje",
+    text: "Antes del viaje",
     icon: CompassIcon,
     hint: "Un plan a tu medida",
   },
   {
-    title: "La plata, en orden",
-    text: "Ayudame a definir el presupuesto de mi viaje y cuánto puedo gastar por día.",
+    title: "Después del viaje",
+    text: "Después del viaje",
     icon: WalletIcon,
-    hint: "Viajá con tranquilidad",
+    hint: "Cerramos las cuentas",
   },
   {
     title: "Nos vamos en grupo",
@@ -228,7 +229,7 @@ export default function ChatView({
             {turi.messages.map((message) => (
               <article
                 key={message.id}
-                className={`turi-message ${message.role}${message.options?.length ? " has-options" : ""}`}
+                className={`turi-message ${message.role}${message.options?.length || message.widgets?.length ? " has-options" : ""}`}
               >
                 {message.role === "assistant" && (
                   <span className="turi-message-avatar">
@@ -236,7 +237,7 @@ export default function ChatView({
                   </span>
                 )}
                 <div className="turi-message-content">
-                  {message.role === "assistant" && (message.text || (!message.options?.length && !message.sources?.length && turi.busy)) ? (
+                  {message.role === "assistant" && (message.text || (!message.options?.length && !message.widgets?.length && !message.sources?.length && turi.busy)) ? (
                     <Markdown
                       remarkPlugins={[remarkGfm]}
                       components={{
@@ -261,6 +262,9 @@ export default function ChatView({
                       onChoose={(value) => void submit(undefined, value)}
                     />
                   )}
+                  {!!message.widgets?.length && <ConversationWidgets widgets={message.widgets} turi={turi}
+                    disabled={turi.busy || fileBusy || voice.phase === "connecting"}
+                    onSend={(value) => void submit(undefined, value)} />}
                   {message.attachments?.map((file, i) => (
                     <span
                       className="turi-message-file"
@@ -430,6 +434,11 @@ export default function ChatView({
         </div>
       )}
       <div className="turi-composer-area">
+        <div className="turi-chat-modes" aria-label="Etapas del viaje">
+          <button type="button" disabled={turi.busy || fileBusy} onClick={() => void submit(undefined, "Antes del viaje")}>Antes de viajar</button>
+          <button type="button" disabled={turi.busy || fileBusy} onClick={() => void submit(undefined, "Después del viaje")}>Después de viajar</button>
+          <button type="button" disabled={turi.busy || fileBusy} onClick={() => void submit(undefined, "Checklist antes de viajar")}>Checklist</button>
+        </div>
         {!!files.length && (
           <div className="turi-attachments">
             {files.map((file, index) => (
