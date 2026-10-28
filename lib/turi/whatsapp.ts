@@ -64,6 +64,12 @@ export function parseIncoming(data: EvolutionMessage): Incoming | undefined {
   return { id, jid, text, ...(media ? { media } : {}) };
 }
 
+// Comma-separated digits (e.g. 5491126883748). Empty = everyone. LIDs without a phone JID never match.
+export function isAllowed(jid: string, list = process.env.WHATSAPP_ALLOWED || "") {
+  const allowed = list.split(",").map((n) => n.replace(/\D/g, "")).filter(Boolean);
+  return !allowed.length || allowed.includes(jid.replace(/@s\.whatsapp\.net$/, ""));
+}
+
 export function toWhatsappText(markdown: string) {
   return markdown
     .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, "$1: $2")
@@ -164,7 +170,7 @@ export async function receiveWhatsapp(request: Request) {
     throw new AppError("Evento inválido.");
   }
   const incoming = event.event === "messages.upsert" && event.data ? parseIncoming(event.data) : undefined;
-  if (!incoming) return Response.json({ ok: true });
+  if (!incoming || !isAllowed(incoming.jid)) return Response.json({ ok: true });
   if (!(await redis("SET", `turi:wa-msg:${incoming.id}`, "processing", "NX", "EX", 86400)))
     return Response.json({ ok: true });
   after(async () => {
