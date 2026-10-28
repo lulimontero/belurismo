@@ -37,6 +37,8 @@ export const travelOptionsInputSchema = z.object({
 export type TravelOptionInput = z.infer<typeof travelOptionInputSchema>;
 export const travelOptionSchema = travelOptionInputSchema.extend({
   id: z.string().min(1).max(80),
+  /** The published price in the traveler's budget currency, from a dated market quote. */
+  homePrice: z.object({ amount: z.number().finite().min(0).max(1e12), currency: z.string().regex(/^[A-Z]{3}$/) }).optional(),
   checkedAt: z.iso.datetime(),
   image: z.object({
     url: webUrl,

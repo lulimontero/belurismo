@@ -276,6 +276,16 @@ export async function connectionsFor(id: string) {
     ),
   };
 }
+// Shows "R$ 38 (≈ $ 10.184)": the equivalent is indicative and never replaces the published price.
+async function homePriceFor(price: TravelOption["price"], home: string) {
+  if (!price || price.currency === home || !(currencies as readonly string[]).includes(price.currency)) return undefined;
+  try {
+    const quote = await exchangeQuote({ from: price.currency, to: home, amount: price.amount });
+    return { amount: Math.round(quote.converted), currency: home };
+  } catch {
+    return undefined;
+  }
+}
 export async function executeTool(
   id: string,
   name: string,
@@ -361,7 +371,7 @@ export async function executeTool(
             sources.push({ title: new URL(source.url).hostname, url: source.url });
       }
     }
-    return { text: result.output_text, sources, sourceProofs: createSearchSourceProofs(id, result.output), note: "Para present_price_review usá sourceProof y un fragmento literal de evidence de la misma sourceUrl. Si no hay prueba para una fuente o faltan los importes/moneda, buscá de nuevo o explicá qué falta. Los proofs son internos y vencen a los 15 minutos; no los muestres al usuario." };
+    return { text: result.output_text, sources, sourceProofs: createSearchSourceProofs(id, result.output), note: "Para present_price_review usá sourceProof y un fragmento literal de evidence de la misma sourceUrl. Si no hay prueba para una fuente o faltan los importes/moneda, buscá de nuevo o explicá qué falta. Los proofs son internos y vencen a los 15 minutos; no los muestres al usuario. Si buscaste restaurantes, actividades, playas o lugares, el próximo paso es present_travel_options con 2 a 4 opciones: no las enumeres en texto." };
   }
   if (name === "present_travel_options") {
     // Realtime does not enforce strict function arguments. An unknown amount must
@@ -396,6 +406,7 @@ export async function executeTool(
           ? `No es de belo travel: sale de una búsqueda general en internet. ${option.caveat}`.slice(0, 360)
           : option.caveat,
         price: publishedOptionPrice(option.price),
+        homePrice: await homePriceFor(publishedOptionPrice(option.price), state.trip.currency),
         id: crypto.randomUUID(),
         checkedAt,
         image: await resolveOptionImage(option.sourceUrl),

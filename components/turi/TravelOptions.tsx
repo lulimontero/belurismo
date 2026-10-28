@@ -115,6 +115,7 @@ function OptionDetails({
                 <strong>{formatMoney(price.amount, price.currency)}</strong>
                 <span>{priceBasis[price.basis]}</span>
               </p>
+              {option.homePrice && <small>≈ {formatMoney(option.homePrice.amount, option.homePrice.currency)} con la cotización de mercado del día</small>}
               {price.basis === "night" && price.stayNights && (
                 <p className="turi-option-estimate">
                   {formatMoney(price.amount * price.stayNights, price.currency)} estimados
@@ -212,7 +213,7 @@ function OptionCard({ option, disabled, onChoose }: {
             <span className="turi-option-tile-location" title={option.location}>{option.location}</span>
             <span className="turi-option-tile-price">
               {option.price
-                ? `${formatMoney(option.price.amount, option.price.currency)} ${priceBasis[option.price.basis]}`
+                ? `${formatMoney(option.price.amount, option.price.currency)}${option.homePrice ? ` (≈ ${formatMoney(option.homePrice.amount, option.homePrice.currency)})` : ""} ${priceBasis[option.price.basis]}`
                 : "Precio a consultar"}
             </span>
           </span>
