@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { createHash } from "node:crypto";
 import { AppError, required, safeEqual, seal, unseal } from "./security";
 import {
   redis,
@@ -14,6 +15,7 @@ import {
   budgetSummary,
   money,
   today,
+  workspaceSchema,
   type Attachment,
   type Message,
   type LocalAction,
@@ -21,6 +23,8 @@ import {
 import { runAgent, validateAttachments } from "./agent";
 import { exchangeQuote } from "./exchange";
 import { mergeTravelOptions, optionToText, readTravelOptions, type TravelOption } from "./travel-options";
+import { shouldNotifyPostTrip } from "./conversation-panels";
+import { budgetAlertAllowed, postTripNoticeKey } from "./posttrip";
 
 type TelegramMessage = {
   message_id: number;
@@ -309,6 +313,13 @@ export async function sendDueReminders() {
     const account = await loadAccount(id);
     if (!account.telegram?.alerts || !account.workspace?.alertsConsent)
       continue;
+    const parsedWorkspace = workspaceSchema.safeParse(account.workspace);
+    if (!parsedWorkspace.success) continue;
+    account.workspace = parsedWorkspace.data;
+    let changed = false;
+    let noticeSentAt: string | undefined;
+    const noticeEpisode = account.workspace.postTrip.notice.snoozedUntil;
+    const tripKey = postTripNoticeKey(account.workspace);
     for (const reminder of account.workspace.reminders.filter(
       (r) =>
         !r.sent &&
@@ -330,6 +341,7 @@ export async function sendDueReminders() {
           `Recordatorio de Turi: ${reminder.title}`,
         );
         reminder.sent = true;
+        changed = true;
         sent++;
       } catch {
         await redis("DEL", `turi:reminder:${id}:${reminder.id}`);
@@ -337,8 +349,24 @@ export async function sendDueReminders() {
     }
     const summary = budgetSummary(account.workspace),
       date = today(account.workspace.trip.timeZone);
+    const notice = shouldNotifyPostTrip(account.workspace, date);
+    if (notice) {
+      const fingerprint = createHash("sha256").update(`${tripKey}|${noticeEpisode ?? "first"}`).digest("hex");
+      const claimKey = `turi:posttrip-notice:${id}:${fingerprint}`;
+      if (await redis("SET", claimKey, "sent", "NX", "EX", 90 * 86400)) {
+        try {
+          await sendTelegram(account.telegram.chatId, `${notice.title}\n${notice.body}\n\nRevisá el resumen o elegí recordármelo en 2 días desde Turi: ${appUrl()}/?turi=chat`);
+          noticeSentAt = new Date().toISOString();
+          changed = true;
+          sent++;
+        } catch {
+          await redis("DEL", claimKey);
+        }
+      }
+    }
     if (
       account.workspace.trip.budget > 0 &&
+      budgetAlertAllowed(account.workspace, date) &&
       (summary.available < 0 ||
         (summary.daily > 0 && summary.spentToday > summary.daily))
     ) {
@@ -374,6 +402,7 @@ export async function sendDueReminders() {
                 `Tu alerta de cotización: 1 ${alert.from} ≈ ${quote.rate} ${alert.to}. Referencia diaria del ${quote.updatedAt}. Fuente: ${quote.sourceUrl}. No es una recomendación de compra ni la tasa de Belo/Pix/tarjeta. Revisá costos antes de operar.`,
               );
               alert.sent = true;
+              changed = true;
               sent++;
             } catch {
               await redis("DEL", key);
@@ -390,23 +419,25 @@ export async function sendDueReminders() {
       sentAlertIds = new Set(
         account.workspace.rateAlerts.filter((r) => r.sent).map((r) => r.id),
       );
-    await mutateAccount(id, (latest) =>
-      latest.workspace
-        ? {
-            ...latest,
-            updatedAt: Date.now(),
-            workspace: {
-              ...latest.workspace,
-              reminders: latest.workspace.reminders.map((r) =>
-                sentReminderIds.has(r.id) ? { ...r, sent: true } : r,
-              ),
-              rateAlerts: latest.workspace.rateAlerts.map((r) =>
-                sentAlertIds.has(r.id) ? { ...r, sent: true } : r,
-              ),
-            },
-          }
-        : latest,
-    );
+    if (changed) await mutateAccount(id, (latest) => {
+      if (!latest.workspace) return latest;
+      const workspace = workspaceSchema.parse(latest.workspace);
+      const sameNotice = noticeSentAt && postTripNoticeKey(workspace) === tripKey &&
+        workspace.postTrip.notice.snoozedUntil === noticeEpisode;
+      return {
+        ...latest,
+        updatedAt: Date.now(),
+        workspace: {
+          ...workspace,
+          reminders: workspace.reminders.map((r) => sentReminderIds.has(r.id) ? { ...r, sent: true } : r),
+          rateAlerts: workspace.rateAlerts.map((r) => sentAlertIds.has(r.id) ? { ...r, sent: true } : r),
+          postTrip: sameNotice ? {
+            ...workspace.postTrip,
+            notice: { ...workspace.postTrip.notice, lastNotifiedAt: noticeSentAt! },
+          } : workspace.postTrip,
+        },
+      };
+    });
   }
   return { sent };
 }

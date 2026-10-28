@@ -20,22 +20,19 @@ export const categories = [
   "Otros",
 ] as const;
 const amount = z.number().finite().min(0).max(1_000_000_000);
+export const timeZoneSchema = z.string().max(80).refine((value) => {
+  try {
+    new Intl.DateTimeFormat("es", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}, "Zona horaria no válida");
 export const tripSchema = z.object({
   destination: z.string().max(120).default(""),
   startDate: z.union([z.literal(""), z.iso.date()]).default(""),
   endDate: z.union([z.literal(""), z.iso.date()]).default(""),
-  timeZone: z
-    .string()
-    .max(80)
-    .refine((value) => {
-      try {
-        new Intl.DateTimeFormat("es", { timeZone: value });
-        return true;
-      } catch {
-        return false;
-      }
-    }, "Zona horaria no válida")
-    .default("America/Argentina/Buenos_Aires"),
+  timeZone: timeZoneSchema.default("America/Argentina/Buenos_Aires"),
   travelers: z.number().int().min(1).max(50).default(1),
   currency: z.enum(currencies).default("ARS"),
   destinationCurrency: z.enum(currencies).default("BRL"),
@@ -82,6 +79,105 @@ export const reminderSchema = z.object({
   at: z.iso.datetime({ offset: true }),
   sent: z.boolean().default(false),
 });
+export const assistantPreferencesSchema = z.object({
+  checklist: z.record(z.string(), z.boolean()).default({}),
+  ratings: z.record(z.string(), z.number().int().min(1).max(5)).default({}),
+  anonymousPriceConsent: z.boolean().default(false),
+});
+export const reportedRemainderSchema = z.object({
+  amount,
+  currency: z.enum(currencies),
+  status: z.enum(["undecided", "keep"]),
+  updatedAt: z.iso.datetime(),
+});
+export const templateFavoriteSchema = z.object({
+  name: z.string().min(1).max(140),
+  kind: z.enum(["hotel", "restaurant", "activity", "beach", "place"]),
+  location: z.string().max(180),
+  summary: z.string().max(360),
+  sourceUrl: z.url().max(2000).refine((value) => {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
+  }),
+});
+export const savedTripTemplateSchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(120),
+  createdAt: z.iso.datetime(),
+  origin: z.object({
+    destination: z.string().max(120),
+    startDate: z.union([z.literal(""), z.iso.date()]),
+    endDate: z.union([z.literal(""), z.iso.date()]),
+    days: z.number().int().min(0).max(36600),
+    // Optional for saved templates created before these references were recorded.
+    timeZone: timeZoneSchema.optional(),
+    destinationCurrency: z.enum(currencies).optional(),
+  }),
+  currency: z.enum(currencies),
+  categoryBudgets: z.partialRecord(z.enum(categories), amount),
+  itinerary: z.array(z.object({
+    title: z.string().min(1).max(160),
+    dayOffset: z.number().int().min(-365).max(365),
+    startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    durationMinutes: z.number().int().min(1).max(525600),
+    location: z.string().max(250),
+    notes: z.string().max(2000),
+  })).max(80),
+  members: z.array(z.object({ name: z.string().min(1).max(60) })).max(50),
+  favorites: z.array(templateFavoriteSchema).max(12),
+});
+export const priceContributionSchema = z.object({
+  id: z.string().min(1).max(80),
+  expenseId: z.string().min(1).max(80),
+  item: z.string().min(1).max(100),
+  area: z.string().min(1).max(120),
+  amount: amount.refine((value) => value > 0),
+  currency: z.enum(currencies),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  createdAt: z.iso.datetime(),
+});
+const archivedTripSnapshotSchema = z.object({
+  trip: tripSchema,
+  expenses: z.array(expenseSchema).max(1000),
+  members: z.array(memberSchema.omit({ email: true, belotag: true })).max(50),
+  itinerary: z.array(itinerarySchema.omit({ calendarEventId: true })).max(300),
+  reminders: z.array(reminderSchema).max(100),
+  rateAlerts: z.array(z.object({
+    id: z.string().max(80), from: z.enum(currencies), to: z.enum(currencies),
+    threshold: z.number().positive().max(1e9), direction: z.enum(["below", "above"]), sent: z.boolean(),
+  })).max(20),
+  assistantPreferences: assistantPreferencesSchema,
+  remainder: reportedRemainderSchema.nullable(),
+});
+export const archivedTripSchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(120),
+  createdAt: z.iso.datetime(),
+  snapshot: archivedTripSnapshotSchema,
+});
+export const postTripSchema = z.object({
+  tripId: z.string().min(1).max(80).default("current"),
+  remainder: reportedRemainderSchema.nullable().default(null),
+  notice: z.object({
+    snoozedUntil: z.iso.datetime().nullable().default(null),
+    dismissed: z.boolean().default(false),
+    lastNotifiedAt: z.iso.datetime().nullable().default(null),
+  }).default({ snoozedUntil: null, dismissed: false, lastNotifiedAt: null }),
+  templates: z.array(savedTripTemplateSchema).max(10).default([]),
+  archivedTrips: z.array(archivedTripSchema).max(10).default([]),
+  priceContributions: z.array(priceContributionSchema).max(50).default([]),
+  flightWatches: z.array(z.object({
+    id: z.string().min(1).max(80), destination: z.string().min(1).max(120),
+    currency: z.enum(currencies), maxPrice: amount.refine((value) => value > 0), createdAt: z.iso.datetime(),
+  })).max(10).default([]),
+}).superRefine((value, context) => {
+  if (new TextEncoder().encode(JSON.stringify(value)).length > 250000)
+    context.addIssue({ code: "custom", message: "Los datos de cierre ocupan demasiado. Exportá y quitá una plantilla o archivo antes de agregar otro." });
+});
+export type SavedTripTemplate = z.infer<typeof savedTripTemplateSchema>;
+export type ArchivedTrip = z.infer<typeof archivedTripSchema>;
+export type PriceContribution = z.infer<typeof priceContributionSchema>;
+export type PostTripState = z.infer<typeof postTripSchema>;
 export const workspaceSchema = z.object({
   trip: tripSchema,
   expenses: z.array(expenseSchema).max(1000).default([]),
@@ -89,11 +185,8 @@ export const workspaceSchema = z.object({
   itinerary: z.array(itinerarySchema).max(300).default([]),
   reminders: z.array(reminderSchema).max(100).default([]),
   alertsConsent: z.boolean().default(false),
-  assistantPreferences: z.object({
-    checklist: z.record(z.string(), z.boolean()).default({}),
-    ratings: z.record(z.string(), z.number().int().min(1).max(5)).default({}),
-    anonymousPriceConsent: z.boolean().default(false),
-  }).default({ checklist: {}, ratings: {}, anonymousPriceConsent: false }),
+  assistantPreferences: assistantPreferencesSchema.default({ checklist: {}, ratings: {}, anonymousPriceConsent: false }),
+  postTrip: postTripSchema.default(() => postTripSchema.parse({})),
   rateAlerts: z
     .array(
       z.object({
@@ -159,6 +252,7 @@ export const emptyWorkspace = (): Workspace => ({
   reminders: [],
   alertsConsent: false,
   assistantPreferences: { checklist: {}, ratings: {}, anonymousPriceConsent: false },
+  postTrip: postTripSchema.parse({}),
   rateAlerts: [],
 });
 export const money = (value: number, currency = "ARS") =>

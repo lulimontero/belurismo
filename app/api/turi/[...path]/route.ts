@@ -357,7 +357,7 @@ export async function POST(request: Request) {
         );
       return json({ result, events });
     }
-    const body = await readJson(request, 700000);
+    const body = await readJson(request, path === "state" ? 1_500_000 : 700000);
     if (path === "exchange") {
       await rateLimit(id, "exchange", 15);
       return json(await exchangeQuote(body));

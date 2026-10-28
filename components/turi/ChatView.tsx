@@ -26,6 +26,8 @@ import type { Tab } from "./TuriWorkspace";
 import TuriMark from "./TuriMark";
 import ConversationWidgets from "./ConversationWidgets";
 import TravelOptions from "./TravelOptions";
+import { postTripNoticeState, snoozePostTripNotice, dismissPostTripNotice } from "@/lib/turi/posttrip";
+import "./post-trip-finance.css";
 
 const suggestions = [
   {
@@ -163,8 +165,22 @@ export default function ChatView({
       input.current?.focus();
     }
   };
+  const returnNotice = postTripNoticeState(turi.state);
   return (
     <section className="turi-chat" aria-label="Conversación con Turi">
+      {returnNotice.eligible && (
+        <div className="turi-return-notice" role="status">
+          <strong>Tu viaje terminó</strong>
+          <span>{returnNotice.message}</span>
+          <div>
+            <button onClick={() => void submit(undefined, "Después del viaje")}>Revisar cierre</button>
+            <button onClick={() => turi.setState(previous => snoozePostTripNotice(previous, 2))}>En 2 días</button>
+            <button aria-label="Descartar aviso del cierre" onClick={() => turi.setState(previous => dismissPostTripNotice(previous))}>
+              <XIcon size={16} />
+            </button>
+          </div>
+        </div>
+      )}
       <div
         className="turi-chat-scroll"
         ref={log}

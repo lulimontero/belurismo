@@ -1,5 +1,10 @@
 import { buildConversationPanels, detectConversationPanel } from "./conversation-panels";
-import { planningStepFor, formatRange } from "./planning-flow";
+import {
+  planningStepFor,
+  formatRange,
+  isPostTripPhaseEntry,
+  isExplicitTripReport,
+} from "./planning-flow";
 import type { Workspace } from "./domain";
 import type { ConversationWidget } from "./conversation-widgets";
 
@@ -19,28 +24,30 @@ export function replyWithReferenceFlow(
   const text = (value: string) => emit({ type: "delta", text: value });
   // The demos route initial intents. Follow-up instructions from their buttons
   // need the agent (quote, review, new plan), rather than reopening that panel.
-  if (/^\s*(?:por favor\s+)?(?:ayudame\b|informo\b|prepara\b|anota\b|registra\b|agrega\b|marca\b|quiero\s+(?:revisar|reutilizar|evaluar|comparar)\b|me (?:interesa|quedo con)\b|ya (?:elegi|reserve|tengo)\b)/i.test(normalized)) return false;
-  if (/^(?:antes (?:de viajar|del viaje)|despu[eé]s (?:de viajar|del viaje)|cerrar viaje|ya volv[ií])\s*[.!]?$/i.test(latest.trim())) {
+  if (/^\s*(?:por favor\s+)?(?:ayudame\b|informo\b|prepara\b|anota(?:me)?\b|registra(?:me)?\b|agrega(?:me)?\b|carga(?:me)?\b|marca\b|quiero\s+(?:revisar|reutilizar|evaluar|comparar|anotar|registrar|agregar|cargar)\b|me (?:interesa|quedo con)\b|ya (?:elegi|reserve|tengo)\b)/i.test(normalized)) return false;
+  if (/^\s*(?:hoy\s+)?(?:(?:yo|me)\s+)?(?:gaste|pague)\b/i.test(normalized)) return false;
+  if (/^\s*(?:reutiliz(?:a|ar|ame)\b|guardar (?:para )?(?:el )?proximo viaje\b|guardarlos? para (?:el )?proximo viaje\b)/i.test(normalized)) return false;
+  if (/^antes (?:de viajar|del viaje)\s*[.!]?$/i.test(latest.trim()) || isPostTripPhaseEntry(latest)) {
     const before = /^antes/i.test(latest.trim());
     text(before ? "Armemos tu viaje. ¿Por dónde querés empezar?" : "¡Bienvenido de vuelta! Armemos el cierre de tu viaje. ¿Qué revisamos primero?");
-    const choices = before ? [
+    if (!before) {
+      widget({ type: "panel", kind: "post-trip-overview" });
+      return true;
+    }
+    const choices = [
       { label: "Buscar hotel", text: "Quiero organizar un viaje y buscar alojamiento" },
       { label: "Con quién viajo", text: "Quiero organizar el viaje con mi familia. Ayudame con los viajeros y las edades." },
       { label: "Dónde comer", text: "¿Dónde puedo comer cerca de mi alojamiento?" },
       { label: "Actividades y playas", text: "Recomendame actividades y playas para mi grupo" },
       { label: "Checklist", text: "Checklist antes de viajar" },
-    ] : [
-      { label: "Resumen de gastos", text: "Mostrame el resumen de gastos del viaje" },
-      { label: "Cuentas pendientes", text: "¿Cómo quedaron las cuentas con el grupo?" },
-      { label: "Saldo que sobró", text: "¿Qué hago con los reales que me sobraron?" },
-      { label: "Cobros para revisar", text: "¿Me cobraron de más en algún lado?" },
-      { label: "Guardar el viaje", text: "Guardar este viaje como plantilla" },
-      { label: "Mi opinión", text: "Quiero dejar mi opinión del viaje" },
     ];
     emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "quick-replies", choices } });
     return true;
   }
-  const collected = planningStepFor(messages, state);
+  // A closing report is a new conversation intent. Historic hotel questions
+  // cannot capture it or reactivate a date picker after the user has returned.
+  const report = isExplicitTripReport(latest);
+  const collected = report ? undefined : planningStepFor(messages, state);
   const planning = collected && /cambiar (?:el )?presupuesto|cambiemos (?:el )?presupuesto/i.test(latest)
     ? { ...collected, step: "budget" as const } : collected;
   if (planning && planning.step !== "ready") {

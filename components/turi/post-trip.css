@@ -1,0 +1,93 @@
+.turi-post-stack { display: grid; gap: 12px; margin-top: 12px; min-width: 0; }
+.turi-post-panel { margin-top: 12px; padding: 17px; border: 1px solid var(--turi-line); border-radius: 17px; background: var(--turi-surface); color: var(--turi-ink); font-size: 13px; line-height: 1.65; min-width: 0; overflow-wrap: anywhere; }
+.turi-post-stack > .turi-post-panel { margin-top: 0; }
+.turi-message-content .turi-post-panel h3 { margin: 0 0 9px; font-size: 17px; line-height: 1.3; font-weight: 700; color: var(--turi-ink); }
+.turi-post-panel h4 { margin: 0 0 9px; font-size: 14px; font-weight: 700; line-height: 1.4; color: var(--turi-violet); }
+.turi-post-panel p { margin: 9px 0; }
+.turi-post-panel .turi-post-description { margin: 0 0 13px; color: var(--turi-muted); font-size: 12px; line-height: 1.7; }
+.turi-post-panel small { color: var(--turi-muted); font-size: 11px; line-height: 1.55; }
+.turi-post-panel .turi-post-note { color: var(--turi-muted); font-size: 11px; line-height: 1.7; margin: 11px 0 0; }
+.turi-post-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.turi-post-panel .turi-post-shortcuts > button { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 10px; min-height: 65px; border: 1px solid var(--turi-line); border-radius: 11px; background: var(--turi-surface-soft); text-align: left; color: var(--turi-ink); font-size: 12px; line-height: 1.4; }
+.turi-post-shortcut-number { display: grid; place-items: center; width: 25px; height: 25px; flex-shrink: 0; border-radius: 8px; background: var(--turi-lavender); color: var(--turi-violet); font-size: 11px; font-weight: 700; }
+.turi-post-shortcuts button > span:nth-child(2) { flex: 1; min-width: 0; }
+.turi-post-shortcuts strong { display: block; font-size: 12px; font-weight: 600; }
+.turi-post-shortcuts small { display: block; font-size: 10px; margin-top: 3px; }
+.turi-post-shortcuts button > svg { flex-shrink: 0; color: var(--turi-violet); }
+.turi-post-panel .turi-post-shortcuts > button:hover:not(:disabled) { background: var(--turi-lavender); border-color: var(--turi-violet); }
+.turi-post-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 13px; }
+.turi-post-panel .turi-post-actions > button,
+.turi-post-panel .turi-post-inline-form > button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; border: 1px solid var(--turi-violet); border-radius: 10px; padding: 9px 12px; background: var(--turi-violet); color: var(--turi-surface); font-size: 12px; font-weight: 600; line-height: 1.4; cursor: pointer; }
+.turi-post-panel .turi-post-actions > button.secondary { background: var(--turi-lavender); color: var(--turi-violet); border-color: var(--turi-line); }
+.turi-post-panel .turi-post-actions > button.text { background: transparent; border-color: transparent; color: var(--turi-violet); text-decoration: underline; text-underline-offset: 3px; padding-left: 3px; padding-right: 3px; }
+.turi-post-panel .turi-post-actions > button:hover:not(:disabled),
+.turi-post-panel .turi-post-inline-form > button:hover:not(:disabled) { background: var(--turi-violet-dark); border-color: var(--turi-violet-dark); color: var(--turi-surface); }
+.turi-post-panel .turi-post-actions > button.text:hover:not(:disabled) { background: var(--turi-lavender); color: var(--turi-violet); border-color: transparent; }
+.turi-post-panel button:disabled { opacity: .5; cursor: not-allowed; }
+.turi-post-panel :is(button, input, select, summary):focus-visible { outline: 2px solid var(--turi-violet); outline-offset: 3px; }
+.turi-post-notice-state { display: flex; flex-wrap: wrap; gap: 7px; }
+.turi-post-notice-state > span { background: var(--turi-lavender); color: var(--turi-violet); border-radius: 7px; font-size: 11px; font-weight: 600; padding: 5px 8px; line-height: 1.5; }
+.turi-post-panel .turi-post-status { display: flex; gap: 6px; align-items: flex-start; color: var(--turi-mint-ink); background: var(--turi-mint-soft); border-radius: 9px; padding: 9px 11px; font-size: 12px; line-height: 1.6; margin-top: 12px; }
+.turi-post-share-preview { border: 1px dashed var(--turi-violet); border-radius: 12px; padding: 13px; background: var(--turi-surface-soft); white-space: pre-line; color: var(--turi-ink); font-size: 12px; line-height: 1.8; }
+.turi-post-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; font-size: 12px; line-height: 1.5; cursor: pointer; }
+.turi-post-check > input { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--turi-violet); flex-shrink: 0; }
+.turi-post-check > span { min-width: 0; }
+.turi-post-check strong { font-size: 12px; font-weight: 600; }
+.turi-post-check small { display: block; margin-top: 4px; }
+.turi-post-check:has(input:disabled) { opacity: .6; cursor: default; }
+.turi-post-check.emphasized { padding: 12px; border: 1px solid var(--turi-line); background: var(--turi-surface-soft); border-radius: 11px; margin: 12px 0; }
+.turi-post-check.emphasized:has(input:checked) { border-color: var(--turi-mint); background: var(--turi-mint-soft); }
+.turi-post-field { display: flex; flex-direction: column; min-width: 0; gap: 6px; color: var(--turi-muted); font-size: 11px; line-height: 1.5; margin: 10px 0; }
+.turi-post-panel .turi-post-field :is(input, select) { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid var(--turi-line); border-radius: 10px; background: var(--turi-surface); color: var(--turi-ink); font-size: 13px; line-height: 1.4; }
+.turi-post-field input::placeholder { color: var(--turi-muted); }
+.turi-post-nested-list { padding-left: 12px; margin-left: 25px; max-height: 240px; overflow-y: auto; border-left: 2px solid var(--turi-line); }
+.turi-post-library { display: grid; gap: 9px; }
+.turi-post-library-item { padding: 12px; border: 1px solid var(--turi-line); border-radius: 12px; background: var(--turi-surface-soft); }
+.turi-post-library-item.selected { border-color: var(--turi-violet); background: var(--turi-lavender); }
+.turi-post-library-item > strong { display: block; color: var(--turi-ink); font-size: 14px; font-weight: 700; }
+.turi-post-library-item > small { display: block; margin-top: 4px; }
+.turi-post-library-item > p { color: var(--turi-muted); font-size: 11px; margin: 5px 0; }
+.turi-post-library-item .turi-post-actions { gap: 6px; margin-top: 10px; }
+.turi-post-panel .turi-post-library-item .turi-post-actions > button { font-size: 11px; min-height: 38px; padding: 8px 10px; }
+.turi-post-confirm { padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--turi-line); font-size: 12px; }
+.turi-post-reuse { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--turi-line); }
+.turi-post-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 11px; }
+.turi-post-form-grid .turi-post-field:first-child { grid-column: 1 / -1; }
+.turi-post-form-grid .turi-post-field-wide { grid-column: 1 / -1; }
+.turi-post-panel .turi-post-field input[aria-invalid="true"] { border-color: var(--turi-violet); }
+.turi-post-archives { margin-top: 15px; color: var(--turi-muted); font-size: 11px; }
+.turi-post-archives summary { cursor: pointer; color: var(--turi-violet); }
+.turi-post-archives > div { padding: 9px 0; border-bottom: 1px solid var(--turi-line); }
+.turi-post-archives strong { display: block; color: var(--turi-ink); font-weight: 600; }
+.turi-post-archives small { display: block; margin-top: 3px; }
+.turi-post-rating { padding: 11px 0; border-bottom: 1px solid var(--turi-line); }
+.turi-post-rating > strong { font-size: 12px; font-weight: 600; }
+.turi-post-stars { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 7px; }
+.turi-post-stars > button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid var(--turi-line); border-radius: 9px; background: var(--turi-surface-soft); color: var(--turi-violet); }
+.turi-post-stars > button.selected { background: var(--turi-lavender); border-color: var(--turi-violet); }
+.turi-post-stars > small { margin-left: 4px; }
+.turi-post-inline-form { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.turi-post-inline-form > label { flex: 1; margin: 0; }
+.turi-post-contribution-list { max-height: 360px; overflow-y: auto; padding: 0 3px; }
+.turi-post-contribution-item { border-bottom: 1px solid var(--turi-line); }
+.turi-post-contribution-fields { padding-left: 26px; }
+.turi-post-contribution-fields .turi-post-field { margin-top: 5px; }
+.turi-post-contribution-preview { border-top: 1px solid var(--turi-line); margin-top: 16px; padding-top: 16px; }
+.turi-post-contribution-preview > article { display: grid; gap: 3px; padding: 10px 12px; margin-bottom: 7px; border: 1px solid var(--turi-line); background: var(--turi-surface-soft); border-radius: 10px; font-size: 12px; }
+.turi-post-contribution-preview > article > strong { font-weight: 600; }
+.turi-post-contribution-preview > article > span { color: var(--turi-muted); font-size: 11px; }
+.turi-post-contribution-preview > article > b { color: var(--turi-violet); font-weight: 700; }
+@media (max-width: 640px) {
+  .turi-post-panel { padding: 14px; }
+  .turi-post-shortcuts { grid-template-columns: 1fr; }
+  .turi-post-panel .turi-post-shortcuts > button { min-height: 58px; padding: 9px 11px; }
+  .turi-post-shortcuts strong { font-size: 13px; }
+  .turi-post-shortcuts small { font-size: 11px; }
+  .turi-post-panel .turi-post-field :is(input, select) { font-size: 16px; }
+  .turi-post-panel .turi-post-actions > button,
+  .turi-post-panel .turi-post-library-item .turi-post-actions > button { min-height: 44px; }
+  .turi-post-stars > button { width: 38px; height: 38px; }
+  .turi-post-stars > small { width: 100%; margin: 0; }
+  .turi-post-inline-form { align-items: stretch; }
+  .turi-post-inline-form > label { min-width: 100%; }
+}
