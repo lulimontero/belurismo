@@ -3,6 +3,7 @@ import HotelMarquee from "@/components/HotelMarquee";
 import HowItWorks from "@/components/HowItWorks";
 import Nav from "@/components/Nav";
 import TuriBot from "@/components/TuriBot";
+import TravelHero from "@/components/travel/TravelHero";
 
 const TRAVEL = "https://travel.belo.app/access";
 
@@ -36,18 +37,7 @@ export default function Home() {
     <main className="overflow-x-clip">
       <Nav />
 
-      {/* S1 hero */}
-      <section className="px-4 pt-[120px] text-center md:pt-[186px]">
-        <h1 className="h-display text-[40px] md:text-[58px]">
-          Hoteles, all inclusives y resorts <br className="hidden md:block" />
-          con hasta 65% OFF
-        </h1>
-        <p className="mx-auto mt-[14px] text-[18px] font-medium leading-[18px] tracking-[-0.04em] text-ash">
-          Más de 100.000 alojamientos con <br className="hidden md:block" />
-          descuentos increíbles en todo el mundo
-        </p>
-        <a href={TRAVEL} className="pill mt-10">Buscar mi próximo destino</a>
-      </section>
+      <TravelHero />
 
       {/* S2 marquee */}
       <section className="mt-[110px] text-center">

@@ -177,6 +177,7 @@ export function useTuri() {
             updatedAt: Date.now(),
           }),
         );
+        window.dispatchEvent(new Event("turi:workspace-updated"));
       } catch {
         setError(
           "El almacenamiento de este dispositivo está lleno. Exportá el viaje para conservarlo.",
@@ -391,6 +392,14 @@ export function useTuri() {
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
     );
   };
+  // Clears the chat but keeps the trip, expenses and group already saved.
+  const restart = () => {
+    request.current?.abort();
+    setMessages([]);
+    setProposals([]);
+    setBeloProposals([]);
+    setError("");
+  };
   const erase = async () => {
     request.current?.abort();
     setReady(false);
@@ -431,6 +440,7 @@ export function useTuri() {
     handleEvent,
     refreshStatus,
     erase,
+    restart,
     stop: () => request.current?.abort(),
   };
 }

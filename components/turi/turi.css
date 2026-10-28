@@ -262,6 +262,12 @@ html:has(.turi-dialog[open]) {
   background: var(--turi-lavender);
   color: var(--turi-violet);
 }
+.turi-icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: transparent;
+  color: var(--turi-muted);
+}
 .turi-icon-button.selected {
   background: var(--turi-lavender);
   color: var(--turi-violet);

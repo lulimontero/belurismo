@@ -18,7 +18,7 @@ export default function BeloHotels({ widget }: { widget: Widget }) {
           <strong>{widget.hotels.length} hoteles en belo travel</strong>
           <span>
             {widget.destination} · precios publicados el {day(widget.checkedAt)} para 1 noche
-            ({day(widget.checkedDates[0])} al {day(widget.checkedDates[1])}). Confirmá disponibilidad para tus fechas.
+            ({day(widget.checkedDates[0])} al {day(widget.checkedDates[1])}).
           </span>
         </div>
         <a href={widget.searchUrl} target="_blank" rel="noopener noreferrer">Ver búsqueda en belo travel ↗</a>

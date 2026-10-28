@@ -15,8 +15,11 @@ export default function TuriBot() {
     button = useRef<HTMLButtonElement>(null),
     reduce = useReducedMotion();
   useEffect(() => {
+    const openTuri = () => setOpen(true);
+    window.addEventListener("turi:open", openTuri);
     if (new URLSearchParams(location.search).has("turi"))
       button.current?.click();
+    return () => window.removeEventListener("turi:open", openTuri);
   }, []);
   return (
     <>
