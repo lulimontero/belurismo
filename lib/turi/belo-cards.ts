@@ -46,20 +46,27 @@ async function beloApi<T>(path: string, init: RequestInit = {}): Promise<T> {
       cache: "no-store",
       signal: AbortSignal.timeout(60000),
     });
-    if (response.status !== 429 || attempt === MAX_RETRIES) break;
+    // 429 and gateway errors are transient; the Idempotency-Key makes a POST retry safe.
+    if (![429, 502, 503, 504].includes(response.status) || attempt === MAX_RETRIES) break;
     const retryAfter = Number(response.headers.get("retry-after"));
     await sleep(Math.min(retryAfter > 0 ? retryAfter * 1000 : 2000 * 2 ** attempt, 20000));
   }
-  const body = await response.json().catch(() => ({}));
+  const raw = await response.text().catch(() => "");
+  let body: { error?: { code?: string; message?: string } } = {};
+  try { body = JSON.parse(raw); } catch {}
   if (!response.ok) {
     const code: string = body?.error?.code || "";
+    console.error("belo API error", init.method ?? "GET", path, response.status, raw.slice(0, 500));
     throw new AppError(
       errorText[code] ||
         (response.status === 429
           ? "belo está limitando las solicitudes. Probá de nuevo en un minuto."
           : response.status === 422
           ? "belo rechazó la tarjeta: se alcanzó el tope de tarjetas virtuales o falta saldo."
-          : body?.error?.message || "belo no respondió."),
+          : body?.error?.message ||
+            (response.status >= 500
+              ? `belo tuvo un error interno (${response.status}). Probá de nuevo en unos minutos.`
+              : `belo rechazó la solicitud (${response.status}).`)),
       response.status,
     );
   }
