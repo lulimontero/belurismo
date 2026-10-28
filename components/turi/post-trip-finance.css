@@ -1,0 +1,18 @@
+.turi-post-finance .turi-post-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:14px 0; }
+.turi-post-fields label { display:flex; flex-direction:column; gap:6px; color:var(--turi-muted); font-size:12px; min-width:0; }
+.turi-post-fields :is(input,select) { width:100%; min-width:0; background:var(--turi-surface); color:var(--turi-ink); border:1px solid #9c80c5; border-radius:10px; padding:10px; min-height:42px; font-size:14px; }
+.turi-post-fields input[type=number] { font-variant-numeric:tabular-nums; color:var(--turi-violet); }
+.turi-post-quote { padding:15px; border:1px solid var(--turi-line); background:var(--turi-surface-soft); border-radius:14px; margin-top:16px; overflow-wrap:anywhere; }
+.turi-post-finance small { display:block; margin-top:7px; }
+.turi-post-finance h4.turi-post-subheading { margin-top:20px; }
+.turi-post-finance .turi-panel-row { flex-wrap:wrap; }
+.turi-post-finance details { margin-top:12px; color:var(--turi-muted); font-size:12px; }
+.turi-post-finance details summary { cursor:pointer; color:var(--turi-violet); }
+.turi-post-reminder-label { display:grid; gap:6px; margin:0 0 12px; color:var(--turi-muted); font-size:12px; }
+.turi-post-reminder-label textarea { width:100%; min-height:85px; padding:10px; border:1px solid #9c80c5; border-radius:10px; color:var(--turi-ink); background:var(--turi-surface); resize:vertical; font-size:13px; }
+.turi-return-notice { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px 12px; padding:12px 20px; background:var(--turi-mint-soft); border-bottom:1px solid #b8ecdd; color:var(--turi-mint-ink); font-size:12px; }
+.turi-return-notice > span { flex:1; min-width:180px; }
+.turi-return-notice > div { display:flex; gap:6px; align-items:center; }
+.turi-return-notice button { min-height:34px; border:1px solid #b8ecdd; border-radius:999px; padding:6px 10px; background:var(--turi-surface); color:var(--turi-mint-ink); }
+@media(max-width:640px) { .turi-post-fields :is(input,select), .turi-post-reminder-label textarea { font-size:16px; } }
+@media(max-width:380px) { .turi-post-finance .turi-post-fields { grid-template-columns:minmax(0,1fr); } }

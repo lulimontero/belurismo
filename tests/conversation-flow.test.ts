@@ -32,13 +32,75 @@ test("phase entry emits a short answer and usable quick replies instead of demo 
   assert.equal(after.handled, true);
   for (const result of [before, after]) {
     assert.equal(result.events.length, 2);
-    const widget = result.widgets[0];
-    assert.equal(widget.type, "quick-replies");
-    if (widget.type === "quick-replies") {
-      assert.ok(widget.choices.length > 0 && widget.choices.length <= 6);
-      assert.ok(widget.choices.every((choice) => choice.label && choice.text));
-    }
     assert.doesNotMatch(result.text, /Florianópolis|Lu, Marcos|300\.000|240/);
+  }
+  const beforeWidget = before.widgets[0];
+  assert.equal(beforeWidget.type, "quick-replies");
+  if (beforeWidget.type === "quick-replies") {
+    assert.ok(beforeWidget.choices.length > 0 && beforeWidget.choices.length <= 6);
+    assert.ok(beforeWidget.choices.every((choice) => choice.label && choice.text));
+  }
+  assert.deepEqual(after.widgets.map(widget => widget.type === "panel" ? widget.kind : widget.type), ["post-trip-overview"]);
+});
+
+const postTripReferenceScenarios = [
+  ["Simular notificación del fin del viaje", "post-trip-notice"],
+  ["Mostrame el resumen de gastos del viaje", "summary"],
+  ["¿En qué días me pasé y qué aprendo para el próximo?", "daily"],
+  ["¿Cómo quedaron las cuentas con el grupo?", "group"],
+  ["¿Qué hago con los reales que me sobraron?", "leftover"],
+  ["¿Me cobraron de más en algún lado?", "price-review"],
+  ["Armame un resumen para compartir con el grupo", "recap"],
+  ["Guardá este viaje para el próximo", "template"],
+  ["Quiero dejar mi opinión del viaje", "feedback"],
+  ["¿Adónde puedo ir la próxima vez?", "next-trip"],
+] as const;
+test("the ten posttrip HTML scenarios take priority over incomplete or completed hotel history", () => {
+  const incomplete = "Busco hotel en Lisboa";
+  const complete = "Busco hotel en Lisboa del 5 al 10 de enero de 2027 para 2 adultos. Presupuesto total de USD 1500 para todo el grupo.";
+  for (const previous of [incomplete, complete]) {
+    for (const includePhase of [false, true]) {
+      for (const [question, expected] of postTripReferenceScenarios) {
+        const result = run(users(previous, ...(includePhase ? ["Ya volví"] : []), question));
+        assert.equal(result.handled, true, `${previous} → ${question}`);
+        assert.deepEqual(result.widgets.map(widget => widget.type === "panel" ? widget.kind : widget.type), [expected], question);
+        assert.equal(result.widgets.some(widget => widget.type === "planning"), false, "closing never opens a hotel date picker");
+      }
+    }
+  }
+});
+
+test("a short followup after returning does not reactivate an old hotel flow", () => {
+  for (const followup of ["Sí", "240 reales", "Pasar a dólares", "No, gracias"]) {
+    const result = run(users("Busco hotel en Lisboa", "Ya volví", "¿Qué hago con los reales que me sobraron?", followup));
+    assert.equal(result.handled, false, followup);
+    assert.deepEqual(result.events, [], "the agent must interpret the followup in the closing context");
+  }
+});
+
+test("short reference-HTML action labels continue the previous task instead of opening an unrelated panel", () => {
+  const stories = [
+    ["¿Qué hago con los reales que me sobraron?", "Guardar para el próximo viaje"],
+    ["¿Qué hago con los reales que me sobraron?", "Guardarlos para el próximo viaje"],
+    ["Guardá este viaje para el próximo", "Reutilizar viaje a Lisboa"],
+  ];
+  for (const [initial, action] of stories) {
+    const result = run(users("Busco hotel en Lisboa", "Ya volví", initial, action));
+    assert.equal(result.handled, false, action);
+    assert.deepEqual(result.events, [], "the agent needs to continue keeping the currency or preparing the new plan");
+  }
+});
+
+test("a real new plan after closing requests fresh dates rather than showing next-trip inspiration", () => {
+  const state = emptyWorkspace();
+  state.trip = { ...state.trip, destination: "Roma", startDate: "2026-01-05", endDate: "2026-01-10" };
+  const result = run(users("Busco hotel en Roma", "Ya volví", "Quiero organizar otro viaje a Lisboa"), state);
+  assert.equal(result.handled, true);
+  assert.equal(result.widgets[0].type, "planning");
+  if (result.widgets[0].type === "planning") {
+    assert.equal(result.widgets[0].context.destination, "Lisboa");
+    assert.equal(result.widgets[0].context.step, "dates");
+    assert.equal(result.widgets[0].context.startDate, undefined);
   }
 });
 
@@ -126,10 +188,15 @@ test("a combined closing request shows the report and the group accounts", () =>
 for (const text of [
   "Anotá en mis gastos cincuenta reales para el almuerzo",
   "Registrá 50 BRL en mis gastos y decime cuánto gasté en el viaje",
+  "Gasté cincuenta reales en comida",
+  "Quiero anotar cincuenta reales en mis gastos",
+  "Anotame 50 BRL y decime cuánto gasté en el viaje",
 ]) test(`expense intent is never discarded for a report: ${text}`, () => {
-  const result = run(users(text));
-  assert.equal(result.handled, false, "the agent must prepare the new expense before showing updated totals");
-  assert.deepEqual(result.events, []);
+  for (const history of [[], ["Busco hotel en Lisboa", "Ya volví"]]) {
+    const result = run(users(...history, text));
+    assert.equal(result.handled, false, "the agent must prepare the new expense before showing updated totals");
+    assert.deepEqual(result.events, []);
+  }
 });
 
 for (const text of [

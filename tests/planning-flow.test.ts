@@ -165,6 +165,17 @@ test("cambiar el destino de un flujo listo vuelve a pedir fechas", () => {
   assert.equal(completed?.nights, 6);
 });
 
+test("post-trip entry and closing reports end the historical lodging flow", () => {
+  for (const closing of ["Ya volví", "Después del viaje", "¿Cómo quedaron las cuentas con el grupo?", "¿Qué hago con los reales que me sobraron?", "¿En qué días me pasé?"]) {
+    assert.equal(planningStepFor(users("Busco hotel en Lisboa", closing, "Sí"), emptyWorkspace()), undefined, closing);
+  }
+  const state = emptyWorkspace();
+  state.trip = { ...state.trip, destination: "Roma", startDate: "2026-01-05", endDate: "2026-01-10" };
+  const newPlan = planningStepFor(users(...ready, "Ya volví", "Quiero viajar a Lisboa"), state);
+  assert.equal(newPlan?.step, "dates");
+  assert.equal(newPlan?.startDate, undefined);
+});
+
 test("un nuevo viaje reinicia el contexto del anterior aunque repita el destino", () => {
   const workspace = emptyWorkspace();
   workspace.trip = { ...workspace.trip, destination: "Roma", startDate: "2027-01-05", endDate: "2027-01-10" };

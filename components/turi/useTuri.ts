@@ -11,8 +11,9 @@ import {
   type Status,
   type LocalAction,
 } from "@/lib/turi/domain";
-import { mergeTravelOptions, optionToText, readTravelOptions } from "@/lib/turi/travel-options";
+import { mergeTravelOptions, readTravelOptions } from "@/lib/turi/travel-options";
 import { readConversationWidget } from "@/lib/turi/conversation-widgets";
+import { messageForAssistant, workspaceForAssistant } from "@/lib/turi/assistant-context";
 
 export async function api<T = Record<string, unknown>>(
   path: string,
@@ -326,12 +327,12 @@ export function useTuri() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            state: current.current.state,
+            state: workspaceForAssistant(current.current.state),
             messages: next
               .slice(-24)
               .map((m) => ({
                 role: m.role,
-                text: [m.text, ...(m.options || []).map(optionToText)].filter(Boolean).join("\n\n"),
+                text: messageForAssistant(m),
               })),
             attachments,
             location,

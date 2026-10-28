@@ -39,6 +39,14 @@ export default function TuriWorkspace({ onClose }: { onClose: () => void }) {
       ? "connections"
       : "chat",
   );
+  const activeTrip = useRef(turi.state.postTrip.tripId);
+  const stopVoice = voice.stop;
+  useEffect(() => {
+    if (activeTrip.current !== turi.state.postTrip.tripId) {
+      stopVoice();
+      activeTrip.current = turi.state.postTrip.tripId;
+    }
+  }, [turi.state.postTrip.tripId, stopVoice]);
   const setTab = (next: Tab) => {
     if (next !== "chat") voice.stop();
     setActiveTab(next);

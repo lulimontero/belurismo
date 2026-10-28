@@ -1,8 +1,9 @@
 "use client";
 
+import { messageForAssistant, workspaceForAssistant } from "@/lib/turi/assistant-context";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type TuriController } from "./useTuri";
-import { optionToText } from "@/lib/turi/travel-options";
 
 export function useRealtime(turi: TuriController) {
   const [phase, setPhase] = useState<
@@ -199,7 +200,7 @@ export function useRealtime(turi: TuriController) {
                 }>("tool", {
                   name: call.name,
                   args: JSON.parse(call.arguments),
-                  state: current.current.state,
+                  state: workspaceForAssistant(current.current.state),
                 });
                 if (attempt !== generation.current) return;
                 if (result.events.some((e) => e.type === "source" || e.type === "travel_options" || e.type === "widget")) {
@@ -250,7 +251,8 @@ export function useRealtime(turi: TuriController) {
         // Carry the actual chat into the voice session, without re-playing audio.
         current.current.messages
           .slice(-12)
-          .filter((m) => m.text || m.options?.length)
+          .map(message => ({ role: message.role, text: messageForAssistant(message) }))
+          .filter(message => message.text)
           .forEach((message) =>
             sendEvent({
               type: "conversation.item.create",
@@ -260,7 +262,7 @@ export function useRealtime(turi: TuriController) {
                 content: [
                   {
                     type: message.role === "user" ? "input_text" : "output_text",
-                    text: [message.text, ...(message.options || []).map(optionToText)].filter(Boolean).join("\n\n"),
+                    text: message.text,
                   },
                 ],
               },
@@ -287,7 +289,7 @@ export function useRealtime(turi: TuriController) {
       const response = await fetch("/api/turi/realtime", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sdp: offer.sdp, state: current.current.state }),
+        body: JSON.stringify({ sdp: offer.sdp, state: workspaceForAssistant(current.current.state) }),
         signal: abort.signal,
       });
       if (!response.ok) {
@@ -322,7 +324,7 @@ export function useRealtime(turi: TuriController) {
     void fetch("/api/turi/realtime/context", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: turi.state }),
+      body: JSON.stringify({ state: workspaceForAssistant(turi.state) }),
       signal: controller.signal,
     })
       .then((r) => (r.ok ? r.json() : null))

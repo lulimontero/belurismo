@@ -1,4 +1,5 @@
 import type { Workspace } from "./domain";
+import { detectConversationPanel } from "./conversation-panels";
 
 // Ported from the pretrip HTML's parseHotelRequest, nextQuestion,
 // nightsOf, formatRange and budgetOptions. Values describe the user's plan,
@@ -55,6 +56,25 @@ function accommodationIntent(text: string) {
   return EXPLICIT_LODGING.test(text) || NEW_TRIP.test(text) || (LODGING.test(text) && !OTHER_TOPIC.test(text)) ||
     (/\b(?:quiero|queremos|quisiera|me gustar[ií]a)\s+(?:viajar|ir)\s+a\s+/i.test(text) && Boolean(destinationFrom(text))) ||
     /\b(?:organizar|armar|planear|planificar)\s+(?:(?:un|mi|el|nuestro|otro)\s+)?viaje\b/i.test(text);
+}
+
+export function isAccommodationPlanningRequest(text: string) {
+  return accommodationIntent(text);
+}
+
+export function isPostTripPhaseEntry(text: string) {
+  const value = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  return /^(?:despues (?:de viajar|del viaje)|cerrar viaje|ya volvi)\s*[.!]?$/i.test(value);
+}
+
+export function isExplicitTripReport(text: string) {
+  const kind = detectConversationPanel(text);
+  if (!kind) return false;
+  if (kind === "summary")
+    return /resumen|cu[aá]nto|gastos del|gastos de mi|mis gastos|c[oó]mo|balance|me queda|gasto total/i.test(text);
+  // A concrete new plan is distinct from asking for next-trip inspiration.
+  if (kind === "next-trip") return !accommodationIntent(text);
+  return true;
 }
 
 function normalizedDestination(value: string): string | undefined {
@@ -301,6 +321,15 @@ export function planningStepFor(messages: readonly HistoryMessage[], workspace: 
   // not confirmations of hotel occupancy, hotel currency or accommodation cap.
   let active = false;
   for (const message of users) {
+    if (isPostTripPhaseEntry(message.text)) {
+      active = false;
+      for (const key of Object.keys(context) as (keyof PlanningContext)[]) delete context[key];
+      continue;
+    }
+    if (isExplicitTripReport(message.text)) {
+      active = false;
+      continue;
+    }
     if (accommodationIntent(message.text)) active = true;
     if (!active) continue;
     const changeDates = CHANGE_DATES.test(message.text);
@@ -347,5 +376,5 @@ export function planningStepFor(messages: readonly HistoryMessage[], workspace: 
       if (budget[key] !== undefined) Object.assign(context, { [key]: budget[key] });
     }
   }
-  return { ...context, step: nextQuestion(context) };
+  return active ? { ...context, step: nextQuestion(context) } : undefined;
 }

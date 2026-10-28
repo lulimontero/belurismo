@@ -6,6 +6,7 @@ import {
   type Expense,
   type Workspace,
 } from "./domain";
+import { postTripNoticeState } from "./posttrip";
 
 export const conversationPanelKinds = [
   "summary", "daily", "group", "recap", "checklist", "post-trip-notice",
@@ -290,24 +291,24 @@ function groupRecap(state: Workspace, days: number): ConversationPanels["recap"]
 }
 
 /** Adapted from shouldNotifyPostTrip(): opt-in, next calendar day through day14,
- * only when there is a real calculated debt. No invented wallet remainder.
+ * with real calculated debts or an explicitly reported remainder. The persistent
+ * notice state also applies dismissal, prior delivery and an explicit snooze.
  */
 export function shouldNotifyPostTrip(
   state: Workspace,
   date: string,
   pendingDebts = settleExpenses(state.expenses).transfers.length,
 ): ConversationPanels["postTripNotice"] {
-  if (!state.alertsConsent || !pendingDebts) return null;
-  const end = ordinal(state.trip.endDate);
-  const current = ordinal(date);
-  if (end === undefined || current === undefined) return null;
-  const daysAfter = current - end;
-  if (daysAfter < 1 || daysAfter > 14) return null;
+  // Keep the old argument for callers; the notice always recalculates actual
+  // recorded debts rather than trusting a supplied count or a wallet guess.
+  void pendingDebts;
+  const notice = postTripNoticeState(state, { date });
+  if (!notice.eligible || notice.daysAfter === null || !notice.message) return null;
   return {
     title: "Tu viaje terminó",
-    body: `Te ${pendingDebts === 1 ? "queda 1 cuenta pendiente" : `quedan ${pendingDebts} cuentas pendientes`} con tu grupo. ¿Las revisamos?`,
-    daysAfter,
-    pendingDebts,
+    body: notice.message,
+    daysAfter: notice.daysAfter,
+    pendingDebts: notice.pendingDebts,
   };
 }
 

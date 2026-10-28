@@ -21,6 +21,7 @@ import { optionToText, publishedOptionPrice, travelOptionsInputSchema, type Trav
 import { buildConversationPanels, preTripChecks } from "./conversation-panels";
 import { panelKinds, planningContextSchema } from "./conversation-widgets";
 import { replyWithReferenceFlow } from "./conversation-flow";
+import { buildPriceReview, priceReviewInputSchema } from "./price-reviews";
 
 export const openaiClient = () =>
   new OpenAI({
@@ -68,6 +69,11 @@ export function validateAttachments(files: Attachment[]) {
     throw new AppError("Los adjuntos juntos deben pesar hasta 2,5 MB.", 413);
 }
 const functions = [
+  {
+    name: "present_price_review",
+    description: "Muestra una ficha de comparación de un gasto registrado: pagado, rango documentado, unidad/cantidad, diferencia y fuente/fecha. Primero buscá referencias reales con search_travel. No inventes rangos típicos, equivalencias ni sobreprecios. expenseId identifica el comprobante; currency debe coincidir con su moneda. Los dos importes deben aparecer en evidence, paráfrasis factual de la fuente. quantity sólo con cantidad confirmada del comprobante; si falta, preguntá. conditions explica si zona, fecha, producto, tarifa, impuestos y cantidad son comparables o qué límites hay. Una diferencia de precio no demuestra cobro indebido. Si faltan fuentes/precios comparables, explicalo sin llamar esta herramienta.",
+    parameters: z.toJSONSchema(priceReviewInputSchema, { override: ({ jsonSchema }) => { if (jsonSchema.format === "uri") delete jsonSchema.format; } }),
+  },
   {
     name: "show_planning_step",
     description: "Muestra el control interactivo del próximo dato faltante de la previa al viaje: destino, calendario entrada/salida, viajeros, edades de menores o presupuesto. Es la conversación paso a paso del HTML, también disponible durante voz. Usar sólo datos explícitos; no inventar año ni asumir el presupuesto completo como hotelero. El usuario elige en el chat y responde con el botón.",
@@ -202,7 +208,7 @@ export const realtimeTools = functions.map((tool) => ({
 export const responseTools: Tool[] = functions.map((tool) => ({
   type: "function",
   ...tool,
-  strict: tool.name === "present_travel_options",
+  strict: tool.name === "present_travel_options" || tool.name === "present_price_review",
 }));
 export type Emit = (event: { type: string; [key: string]: unknown }) => void;
 export async function connectionsFor(id: string) {
@@ -225,6 +231,15 @@ export async function executeTool(
   state: Workspace,
   emit: Emit,
 ) {
+  if (name === "present_price_review") {
+    try {
+      const comparison = buildPriceReview(args, state.expenses);
+      emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "price-review-result", comparison } });
+      return { status: "shown_in_chat", comparison, note: "La ficha ya se mostró. No declares estafa ni operación confirmada. Resumí los límites y ofrecé revisar el comprobante." };
+    } catch (error) {
+      return { error: (error as Error).message, shown: false };
+    }
+  }
   if (name === "show_planning_step") {
     const context = planningContextSchema.parse(args);
     if (context.step === "ready") return { status: "ready_for_search", context, note: "Los datos ya están completos. Para alojamiento llamá belo_travel_hotels con destino, fechas y adultos; para comida, actividades o lugares usá search_travel y present_travel_options. No hace falta otro control de entrada." };
@@ -235,7 +250,8 @@ export async function executeTool(
     const kind = z.enum(panelKinds).parse(args.kind);
     emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "panel", kind } });
     const panels = buildConversationPanels(state);
-    const data = kind === "post-trip-notice" ? panels.postTripNotice
+    const data = kind === "post-trip-overview" ? { summary: panels.summary, pendingAccounts: panels.group.transfers.length, reportedRemainder: state.postTrip.remainder, library: "La biblioteca privada se muestra en la interfaz; no se carga completa en el contexto de conversación." }
+      : kind === "post-trip-notice" ? panels.postTripNotice
       : kind === "price-review" ? panels.priceReview
       : kind === "next-trip" ? panels.nextTrip
       : kind === "template" ? panels.checklist

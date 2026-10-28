@@ -7,6 +7,7 @@ import PlanningStep from "./PlanningStep";
 import ConversationPanels from "./ConversationPanels";
 import BeloCards from "./BeloCards";
 import BeloHotels from "./BeloHotels";
+import { PriceReviewComparison } from "./PostTripFinance";
 import "./conversation-widgets.css";
 
 function QuickReplies({ widget, disabled, onSend }: {
@@ -29,7 +30,9 @@ export default function ConversationWidgets({ widgets, turi, disabled, onSend }:
   onSend: (text: string) => void;
 }) {
   return <div className="turi-conversation-widgets">
-    {widgets.map((widget) => widget.type === "planning"
+    {widgets.map((widget) => widget.type === "price-review-result"
+      ? <PriceReviewComparison key={widget.id} comparison={widget.comparison} onSend={onSend} />
+      : widget.type === "planning"
       ? <PlanningStep key={widget.id} context={widget.context} disabled={disabled} onSend={onSend} />
       : widget.type === "panel"
         ? <ConversationPanels key={widget.id} kind={widget.kind} turi={turi} disabled={disabled} onSend={onSend} />
