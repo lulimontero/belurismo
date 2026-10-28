@@ -86,6 +86,28 @@ export const beloTravelCatalog: Destination[] = [
     ],
   },
   {
+    name: "Santiago de Chile, Chile",
+    // Plain "Santiago" means Chile here, never Santiago del Estero or de Compostela.
+    match: /\bsantiago\b(?!\s+del?\s+(?:estero|compostela))/i,
+    q: "Santiago de Chile, Chile",
+    placeId: "ChIJL68lBEHFYpYRMQkPQDzVdYQ",
+    sorting: "Discount-desc",
+    checkedAt: "2026-10-28",
+    checkedDates: ["2026-10-28", "2026-10-29"],
+    hotels: [
+      { id: "21429425", name: "Hotel Las Majadas", address: "Jose Julio Nieto, Pirque", stars: 4, ratingLabel: "Excelente", rating: 4.9, listPrice: 528908, price: 232720, discount: 56, image: cdn("21429425", "93689557007a3a8608b07598192eef91166d10d9.jpg") },
+      { id: "6325487", name: "Renaissance Santiago Hotel by Marriott", address: "Avenida Kennedy 4700, Santiago", stars: 4, ratingLabel: "Excelente", rating: 4.5, listPrice: 528501, price: 285391, discount: 46, image: cdn("6325487", "b4129792926b0d07ded944040c8dd385f0242cdb.jpg") },
+      { id: "9776413", name: "Courtyard Santiago Las Condes", address: "Avenida Kennedy 5601, Santiago", stars: 4, ratingLabel: "Excelente", rating: 4.7, listPrice: 599853, price: 329919, discount: 45, image: cdn("9776413", "12205b67679ccde4f8530206213d9a8eb2838622.jpg") },
+      { id: "200094", name: "Sheraton Santiago Hotel and Convention Center", address: "Ave Santa Maria 1742, Santiago", stars: 4, ratingLabel: "Muy bueno", rating: 4.3, listPrice: 458069, price: 256519, discount: 44, image: cdn("200094", "a37044b5864a170b96662e9fadcdc1fbc95bd8ee.jpg") },
+      { id: "574522", name: "Novotel Santiago Las Condes", address: "Av. Alonso de Cordova 5199, Santiago", stars: 4, ratingLabel: "Excelente", rating: 4.5, listPrice: 394727, price: 232889, discount: 41, image: cdn("574522", "1ba204eaf00eee520f7bd1339d01bc119605fd50.jpg") },
+      { id: "564458", name: "Santiago Marriott Hotel", address: "Av Presidente Kennedy 5741, Santiago", stars: 4, ratingLabel: "Muy bueno", rating: 4.4, listPrice: 544077, price: 331887, discount: 39, image: cdn("564458", "4a33b78530d766ede0fd5bcc7258f4e73f0686c8.jpg") },
+      { id: "21412733", name: "NH Collection Santiago Casacostanera", address: "Nueva Costanera 3900, Santiago", stars: 4, ratingLabel: "Muy bueno", rating: 4.3, listPrice: 376557, price: 229700, discount: 39, image: cdn("21412733", "6165c5daf143f75009eae12966b5f81a61bffc71.jpg") },
+      { id: "38848761", name: "Ola Santiago Providencia, Tapestry Collection by Hilton", address: "Holanda 307, Providencia, Santiago", stars: 4, ratingLabel: "Excelente", rating: 4.7, listPrice: 313229, price: 197334, discount: 37, image: cdn("38848761", "8c8d480a3ea08135ab07f363b14b189e059e84d3.jpg") },
+      { id: "2674257", name: "W Santiago", address: "Isidora Goyenechea 3000, Santiago", stars: 5, ratingLabel: "Muy bueno", rating: 4.4, listPrice: 529811, price: 339079, discount: 36, image: cdn("2674257", "ef8f9c9b7adf3f8f148d2a3aa1f3b9ee09b6257b.jpg") },
+      { id: "17714108", name: "ICON Hotel", address: "Av. Alonso de Cordova 6050, Santiago", stars: 4, ratingLabel: "Muy bueno", rating: 4.3, listPrice: 279149, price: 184239, discount: 34, image: cdn("17714108", "d7e4d903e794fe6666fc16071534c8216e431180.jpg") },
+    ],
+  },
+  {
     name: "Las Vegas, Estados Unidos",
     match: /las vegas/i,
     q: "US Navy Enlisted Recruiting, West Lake Mead Boulevard, Las Vegas, NV, USA",
