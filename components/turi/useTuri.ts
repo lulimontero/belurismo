@@ -392,6 +392,14 @@ export function useTuri() {
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
     );
   };
+  // Clears the chat but keeps the trip, expenses and group already saved.
+  const restart = () => {
+    request.current?.abort();
+    setMessages([]);
+    setProposals([]);
+    setBeloProposals([]);
+    setError("");
+  };
   const erase = async () => {
     request.current?.abort();
     setReady(false);
@@ -432,6 +440,7 @@ export function useTuri() {
     handleEvent,
     refreshStatus,
     erase,
+    restart,
     stop: () => request.current?.abort(),
   };
 }
