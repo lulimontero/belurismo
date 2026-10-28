@@ -3,8 +3,8 @@ import { publishedOptionPrice } from "./travel-options";
 
 export const priceReviewInputSchema = z.object({
   expenseId: z.string().min(1).max(80),
-  referenceMin: z.number().finite().positive().max(1e9),
-  referenceMax: z.number().finite().positive().max(1e9),
+  referenceMin: z.number().finite().positive().max(1e9).describe("Precio mínimo publicado por unidad. Una tarifa única es suficiente: referenceMin y referenceMax deben ser iguales a esa tarifa. No se requieren dos precios distintos ni variantes."),
+  referenceMax: z.number().finite().positive().max(1e9).describe("Precio máximo publicado por unidad. Si hay una sola tarifa comparable, repetir exactamente referenceMin; la igualdad es válida y la falta de un rango no impide mostrar la ficha."),
   currency: z.enum(["ARS", "BRL", "USD", "EUR", "UYU", "CLP", "MXN"]),
   quantity: z.number().finite().positive().max(10000),
   unit: z.string().min(1).max(100),
