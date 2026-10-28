@@ -177,6 +177,7 @@ export function useTuri() {
             updatedAt: Date.now(),
           }),
         );
+        window.dispatchEvent(new Event("turi:workspace-updated"));
       } catch {
         setError(
           "El almacenamiento de este dispositivo está lleno. Exportá el viaje para conservarlo.",
