@@ -355,6 +355,9 @@ export function buildConversationPanels(state: Workspace, options: { date?: stri
  */
 export function detectConversationPanel(text: string): ConversationPanelKind | undefined {
   const value = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  // Today's spending during the trip is answered by the agent with trip_summary,
+  // not by the post-trip panels ("saldo" alone means leftover money).
+  if (/\bhoy\b|\bdel dia\b|\bdiari[oa]\b/.test(value) && /saldo|gast|presupuesto|queda|vengo|viene|voy/.test(value)) return;
   if (/resumen para compartir|compartir (?:el |un |mi )?resumen|recap/.test(value)) return "recap";
   if (/cuentas pendientes|cuentas con (?:el |mi )?grupo|quien (?:le )?debe|me deben|\bdebo\b|dividir|belo air|repartir (?:los )?gastos|como quedaron las cuentas/.test(value)) return "group";
   if (/plantilla|reutiliz|que (?:quiero |puedo )?conservar|guardar (?:este |el |mi )?viaje|guarda (?:este |el |mi )?viaje|checklist|lista de pendientes/.test(value)) return "checklist";
