@@ -265,6 +265,8 @@ export async function connectionsFor(id: string) {
   const account = await loadAccount(id);
   return {
     belo: Boolean(process.env.BELO_MCP_URL && account.beloToken),
+    // Organization cards use BELO_API_KEY, independent of the traveler's own belo connection.
+    beloCards: Boolean(process.env.BELO_API_KEY),
     gmail: Boolean(account.google?.gmail),
     calendar: Boolean(account.google?.calendar),
     drive: Boolean(account.google?.drive),
