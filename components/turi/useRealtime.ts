@@ -255,7 +255,7 @@ export function useRealtime(turi: TuriController) {
                 role: message.role,
                 content: [
                   {
-                    type: message.role === "user" ? "input_text" : "text",
+                    type: message.role === "user" ? "input_text" : "output_text",
                     text: message.text,
                   },
                 ],
