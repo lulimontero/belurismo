@@ -44,3 +44,6 @@ next-env.d.ts
 # Local browser verification artifacts
 /output/
 /.playwright-cli/
+
+# Turi local state (cards)
+/.turi/

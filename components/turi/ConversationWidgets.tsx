@@ -5,6 +5,7 @@ import type { ConversationWidget } from "@/lib/turi/conversation-widgets";
 import type { TuriController } from "./useTuri";
 import PlanningStep from "./PlanningStep";
 import ConversationPanels from "./ConversationPanels";
+import BeloCards from "./BeloCards";
 import "./conversation-widgets.css";
 
 function QuickReplies({ widget, disabled, onSend }: {
@@ -31,6 +32,8 @@ export default function ConversationWidgets({ widgets, turi, disabled, onSend }:
       ? <PlanningStep key={widget.id} context={widget.context} disabled={disabled} onSend={onSend} />
       : widget.type === "panel"
         ? <ConversationPanels key={widget.id} kind={widget.kind} turi={turi} disabled={disabled} onSend={onSend} />
-        : <QuickReplies key={widget.id} widget={widget} disabled={disabled} onSend={onSend} />)}
+        : widget.type === "cards"
+          ? <BeloCards key={widget.id} widget={widget} />
+          : <QuickReplies key={widget.id} widget={widget} disabled={disabled} onSend={onSend} />)}
   </div>;
 }

@@ -15,10 +15,19 @@ export const planningContextSchema = z.object({
   budgetScope: z.enum(["night", "total"]).optional(),
   budgetAudience: z.enum(["group", "person"]).optional(),
 });
+// Only display data: no card number, CVV or token ever reaches the widget.
+export const beloCardWidgetSchema = z.object({
+  holder: z.string().max(60),
+  lastFour: z.string().max(4).nullable(),
+  status: z.string().max(30),
+  limitUsd: z.string().max(20).nullable(),
+  error: z.string().max(200).optional(),
+});
 export const conversationWidgetSchema = z.discriminatedUnion("type", [
   z.object({ id: z.string().max(80), type: z.literal("planning"), context: planningContextSchema }),
   z.object({ id: z.string().max(80), type: z.literal("panel"), kind: z.enum(panelKinds) }),
   z.object({ id: z.string().max(80), type: z.literal("quick-replies"), choices: z.array(z.object({ label: z.string().min(1).max(70), text: z.string().min(1).max(1500) })).max(6) }),
+  z.object({ id: z.string().max(80), type: z.literal("cards"), cards: z.array(beloCardWidgetSchema).min(1).max(20) }),
 ]);
 export type ConversationWidget = z.infer<typeof conversationWidgetSchema>;
 

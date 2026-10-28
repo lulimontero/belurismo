@@ -50,7 +50,7 @@ import {
 import { turiInstructions } from "@/lib/turi/prompt";
 import { exchangeQuote } from "@/lib/turi/exchange";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 const locationSchema = z
   .object({
     latitude: z.number().min(-90).max(90),

@@ -1,0 +1,42 @@
+.belo-cards { display: grid; gap: 10px; min-width: 0; }
+.belo-cards header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.belo-cards header strong { font-size: 14px; color: var(--turi-ink); }
+.belo-cards header span { font-size: 11px; color: var(--turi-muted); }
+.belo-cards ul { list-style: none; margin: 0; padding: 4px 0 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+
+.belo-card {
+  position: relative; overflow: hidden; aspect-ratio: 1.586; min-width: 0;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 14px 16px; border-radius: 16px; color: #fff;
+  background: radial-gradient(120% 140% at 100% 0%, var(--turi-violet) 0%, var(--turi-violet-dark) 45%, #17131f 100%);
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(255, 255, 255, .06);
+}
+.belo-card::after {
+  content: ""; position: absolute; right: -40px; bottom: -60px; width: 170px; height: 170px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 255, 178, .28), transparent 70%); pointer-events: none;
+}
+.belo-card.failed { background: var(--turi-surface-soft); color: var(--turi-muted); box-shadow: inset 0 0 0 1px var(--turi-line); }
+.belo-card.failed::after { display: none; }
+.belo-card.failed .belo-card-logo { filter: grayscale(1) opacity(.5); }
+
+.belo-card-shine {
+  position: absolute; inset: -20% auto -20% 0; width: 40%; transform: skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .22), transparent); pointer-events: none;
+}
+.belo-card-top { display: flex; justify-content: space-between; align-items: center; }
+.belo-card-logo { height: 18px; width: auto; filter: brightness(0) invert(1); }
+.belo-card-type { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.belo-card-chip { width: 30px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #d9c48a, #a8915a); opacity: .9; }
+.belo-card.failed .belo-card-chip { background: var(--turi-line); }
+.belo-card-number { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; letter-spacing: .12em; }
+.belo-card-bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+.belo-card-bottom small { display: block; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; opacity: .6; }
+.belo-card-bottom strong { display: block; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
+.belo-card-limit { text-align: right; }
+.belo-card-status {
+  position: absolute; top: 12px; left: 50%; translate: -50% 0; z-index: 1;
+  padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 600; white-space: nowrap;
+  background: var(--turi-mint-bright); color: var(--turi-ink); max-width: 80%; overflow: hidden; text-overflow: ellipsis;
+}
+.belo-card.failed .belo-card-status { background: var(--turi-danger-soft); color: var(--turi-danger); box-shadow: inset 0 0 0 1px var(--turi-danger-soft); }
+.belo-card.failed .belo-card-number { font-family: inherit; font-size: 11px; letter-spacing: 0; line-height: 1.35; color: var(--turi-danger); }

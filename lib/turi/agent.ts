@@ -3,6 +3,7 @@ import type { ResponseInput, Tool } from "openai/resources/responses/responses";
 import { z } from "zod";
 import { AppError, required } from "./security";
 import { beloTools, callBelo } from "./belo";
+import { createCards, listCards } from "./belo-cards";
 import {
   budgetSummary,
   settleExpenses,
@@ -23,8 +24,9 @@ import { replyWithReferenceFlow } from "./conversation-flow";
 export const openaiClient = () =>
   new OpenAI({
     apiKey: required("OPENAI_API_KEY"),
-    timeout: 45000,
-    maxRetries: 0,
+    timeout: 90000,
+    // The SDK backs off on 429/5xx honoring retry-after.
+    maxRetries: 3,
   });
 export const attachmentSchema = z.object({
   name: z.string().max(160),
@@ -148,6 +150,26 @@ const functions = [
       required: ["name", "args"],
       additionalProperties: false,
     },
+  },
+  {
+    name: "belo_create_cards",
+    description:
+      "Emite tarjetas virtuales de belo para la organización, una por titular (1 a 10 en un mismo pedido, por ejemplo Marco, Francisco y Juan). El titular es una etiqueta: la tarjeta es de la organización. limitUsd es un tope que Turi registra, belo no lo aplica. Usar sólo cuando el usuario pida crear tarjetas y haya dado los nombres. Informá qué tarjetas se crearon y cuáles fallaron con su motivo.",
+    parameters: {
+      type: "object",
+      properties: {
+        holders: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 10 },
+        limitUsd: { type: ["string", "null"], description: "Decimal en USD, por ejemplo \"100.00\"; null si no hay tope." },
+      },
+      required: ["holders", "limitUsd"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "belo_list_cards",
+    description:
+      "Lista las tarjetas de la organización en belo con titular, últimos 4 dígitos, estado y el tope registrado por Turi.",
+    parameters: { type: "object", properties: {}, additionalProperties: false },
   },
   {
     name: "belo_available_tools",
@@ -296,6 +318,25 @@ export async function executeTool(
       budget: budgetSummary(state),
       group: settleExpenses(state.expenses),
     };
+  if (name === "belo_create_cards") {
+    const input = z
+      .object({
+        holders: z.array(z.string().trim().min(1).max(60)).min(1).max(10),
+        limitUsd: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable(),
+      })
+      .parse(args);
+    const results = await createCards(input.holders, input.limitUsd);
+    emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "cards", cards: results.map((r) => r.card
+      ? { holder: r.holder, lastFour: r.card.lastFour, status: r.card.status, limitUsd: r.card.limitUsd }
+      : { holder: r.holder, lastFour: null, status: "failed", limitUsd: input.limitUsd, error: r.error?.slice(0, 200) }) } });
+    return { results, note: "Las tarjetas ya se muestran en el chat. Resumí en una o dos líneas cuáles se crearon y cuáles fallaron." };
+  }
+  if (name === "belo_list_cards") {
+    const cards = await listCards();
+    if (cards.length) emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "cards", cards: cards.slice(0, 20).map((c) => ({
+      holder: (c.holder || "Sin titular").slice(0, 60), lastFour: c.lastFour, status: c.status, limitUsd: c.limitUsd })) } });
+    return { cards };
+  }
   if (name === "belo_available_tools") return beloTools(id);
   if (name === "belo_action") {
     const data = z
@@ -422,7 +463,9 @@ export async function runAgent(
     for (const call of calls) {
       emit({
         type: "activity",
-        text: call.name.startsWith("belo")
+        text: call.name === "belo_create_cards"
+          ? "Emitiendo las tarjetas con belo…"
+          : call.name.startsWith("belo")
           ? "Consultando tu conexión con Belo…"
           : call.name === "search_travel"
             ? "Buscando lugares y fuentes actuales…"
