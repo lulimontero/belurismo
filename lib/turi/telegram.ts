@@ -20,6 +20,7 @@ import {
 } from "./domain";
 import { runAgent, validateAttachments } from "./agent";
 import { exchangeQuote } from "./exchange";
+import { mergeTravelOptions, optionToText, readTravelOptions, type TravelOption } from "./travel-options";
 
 type TelegramMessage = {
   message_id: number;
@@ -211,6 +212,7 @@ async function processMessage(message: TelegramMessage) {
     needsReview = false;
   const proposals: LocalAction[] = [],
     beloProposals: NonNullable<typeof account.beloProposals> = [];
+  let options: TravelOption[] = [];
   await runAgent(
     {
       id,
@@ -221,6 +223,7 @@ async function processMessage(message: TelegramMessage) {
     },
     (event) => {
       if (event.type === "delta") answer += String(event.text);
+      if (event.type === "travel_options") options = mergeTravelOptions(options, readTravelOptions(event.options));
       if (event.type === "proposal") {
         needsReview = true;
         proposals.push(event.action as LocalAction);
@@ -236,10 +239,10 @@ async function processMessage(message: TelegramMessage) {
   if (needsReview)
     answer += `\n\nDejé la propuesta para que la revises en ${appUrl()}/?turi=chat desde el navegador que vinculaste. No se guardó ningún cambio ni se movió dinero.`;
   if (!answer) answer = "No pude generar una respuesta. Intentá nuevamente.";
-  await sendTelegram(chatId, answer);
+  await sendTelegram(chatId, [answer, ...options.map(optionToText)].join("\n\n"));
   const messages: Message[] = [
     ...history,
-    { id: crypto.randomUUID(), role: "assistant" as const, text: answer },
+    { id: crypto.randomUUID(), role: "assistant" as const, text: answer, ...(options.length ? { options } : {}) },
   ].slice(-30);
   await mutateAccount(id, (latest) => ({
     ...latest,

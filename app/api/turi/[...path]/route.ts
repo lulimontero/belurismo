@@ -18,7 +18,7 @@ import {
   redis,
   type GoogleService,
 } from "@/lib/turi/storage";
-import { workspaceSchema, type Status } from "@/lib/turi/domain";
+import { messageSchema, workspaceSchema, type Status } from "@/lib/turi/domain";
 import {
   attachmentSchema,
   connectionsFor,
@@ -50,7 +50,7 @@ import {
 import { turiInstructions } from "@/lib/turi/prompt";
 import { exchangeQuote } from "@/lib/turi/exchange";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 const locationSchema = z
   .object({
     latitude: z.number().min(-90).max(90),
@@ -367,15 +367,7 @@ export async function POST(request: Request) {
       const data = z
         .object({
           state: workspaceSchema,
-          messages: z
-            .array(
-              z.object({
-                id: z.string().max(100),
-                role: z.enum(["user", "assistant"]),
-                text: z.string().max(20000),
-              }),
-            )
-            .max(30),
+          messages: z.array(messageSchema).max(30),
           baseRevision: z.number().optional(),
           proposals: z
             .array(

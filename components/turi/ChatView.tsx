@@ -24,6 +24,7 @@ import { api, type TuriController } from "./useTuri";
 import type { VoiceController } from "./useRealtime";
 import type { Tab } from "./TuriWorkspace";
 import TuriMark from "./TuriMark";
+import TravelOptions from "./TravelOptions";
 
 const suggestions = [
   {
@@ -227,7 +228,7 @@ export default function ChatView({
             {turi.messages.map((message) => (
               <article
                 key={message.id}
-                className={`turi-message ${message.role}`}
+                className={`turi-message ${message.role}${message.options?.length ? " has-options" : ""}`}
               >
                 {message.role === "assistant" && (
                   <span className="turi-message-avatar">
@@ -235,7 +236,7 @@ export default function ChatView({
                   </span>
                 )}
                 <div className="turi-message-content">
-                  {message.role === "assistant" ? (
+                  {message.role === "assistant" && (message.text || (!message.options?.length && !message.sources?.length && turi.busy)) ? (
                     <Markdown
                       remarkPlugins={[remarkGfm]}
                       components={{
@@ -250,8 +251,15 @@ export default function ChatView({
                     >
                       {message.text || (turi.busy ? "…" : "")}
                     </Markdown>
-                  ) : (
+                  ) : message.role === "user" ? (
                     <p>{message.text}</p>
+                  ) : null}
+                  {!!message.options?.length && (
+                    <TravelOptions
+                      options={message.options}
+                      disabled={turi.busy || fileBusy || voice.phase === "connecting"}
+                      onChoose={(value) => void submit(undefined, value)}
+                    />
                   )}
                   {message.attachments?.map((file, i) => (
                     <span

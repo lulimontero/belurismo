@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   emptyWorkspace,
+  messageSchema,
   workspaceSchema,
   type Workspace,
   type Message,
@@ -10,6 +11,7 @@ import {
   type Status,
   type LocalAction,
 } from "@/lib/turi/domain";
+import { mergeTravelOptions, optionToText, readTravelOptions } from "@/lib/turi/travel-options";
 
 export async function api<T = Record<string, unknown>>(
   path: string,
@@ -42,11 +44,10 @@ function readLocal(): {
         state: workspaceSchema.parse(data.state),
         messages: Array.isArray(data.messages)
           ? data.messages
-              .filter(
-                (m: Message) =>
-                  typeof m.text === "string" &&
-                  ["user", "assistant"].includes(m.role),
-              )
+              .flatMap((message: unknown) => {
+                const result = messageSchema.safeParse(message);
+                return result.success ? [result.data] : [];
+              })
               .slice(-30)
           : [],
         updatedAt: Number(data.updatedAt || 0),
@@ -154,12 +155,13 @@ export function useTuri() {
     const timer = setTimeout(() => {
       const slim = messages
         .slice(-30)
-        .map(({ id, role, text, sources, attachments }) => ({
+        .map(({ id, role, text, sources, attachments, options }) => ({
           id,
           role,
           text,
           sources,
           attachments,
+          options,
         }));
       try {
         localStorage.setItem(
@@ -183,7 +185,7 @@ export function useTuri() {
           try {
             const data = await api<{ updatedAt: number }>("state", {
               state,
-              messages: slim.map(({ id, role, text }) => ({ id, role, text })),
+              messages: slim,
               baseRevision: cloudRevision.current,
               proposals,
               beloProposals,
@@ -264,13 +266,20 @@ export function useTuri() {
               ? {
                   ...m,
                   sources: [
-                    ...(m.sources || []).filter((s) => s.url !== event.url),
+                    ...(m.sources || []).filter((s) => s.url !== event.url).slice(-19),
                     { title: String(event.title), url: String(event.url) },
                   ],
                 }
               : m,
           ),
         );
+      if (event.type === "travel_options" && assistantId) {
+        const options = readTravelOptions(event.options);
+        if (options.length)
+          setMessages((list) => list.map((message) =>
+            message.id === assistantId ? { ...message, options: mergeTravelOptions(message.options || [], options) } : message,
+          ));
+      }
       if (event.type === "proposal")
         setProposals((list) => [...list, event.action as LocalAction]);
       if (event.type === "belo_review")
@@ -312,7 +321,10 @@ export function useTuri() {
             state: current.current.state,
             messages: next
               .slice(-24)
-              .map((m) => ({ role: m.role, text: m.text })),
+              .map((m) => ({
+                role: m.role,
+                text: [m.text, ...(m.options || []).map(optionToText)].filter(Boolean).join("\n\n"),
+              })),
             attachments,
             location,
           }),
@@ -343,7 +355,7 @@ export function useTuri() {
         setBusy(false);
         setActivity("");
         request.current = null;
-        setMessages((list) => list.filter((m) => m.text || m.role === "user"));
+        setMessages((list) => list.filter((m) => m.text || m.options?.length || m.sources?.length || m.role === "user"));
       }
     },
     [busy, status?.ai, location, handleEvent],

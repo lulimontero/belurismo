@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { travelOptionSchema } from "./travel-options";
 
 export const currencies = [
   "ARS",
@@ -112,13 +113,18 @@ export type Attachment = {
   data: string;
   size: number;
 };
-export type Message = {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  attachments?: { name: string }[];
-  sources?: { title: string; url: string }[];
-};
+export const messageSchema = z.object({
+  id: z.string().min(1).max(100),
+  role: z.enum(["user", "assistant"]),
+  text: z.string().max(20000),
+  attachments: z.array(z.object({ name: z.string().max(160) })).max(3).optional(),
+  sources: z.array(z.object({
+    title: z.string().max(300),
+    url: z.url().max(2000).refine((url) => /^https?:\/\//.test(url)),
+  })).max(20).optional(),
+  options: z.array(travelOptionSchema).max(12).optional(),
+});
+export type Message = z.infer<typeof messageSchema>;
 export type Connection = {
   id: string;
   name: string;

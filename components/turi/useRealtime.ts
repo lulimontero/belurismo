@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type TuriController } from "./useTuri";
+import { optionToText } from "@/lib/turi/travel-options";
 
 export function useRealtime(turi: TuriController) {
   const [phase, setPhase] = useState<
@@ -18,6 +19,7 @@ export function useRealtime(turi: TuriController) {
   }>({});
   const current = useRef(turi),
     liveIds = useRef(new Map<string, string>()),
+    visualTurn = useRef<string | undefined>(undefined),
     generation = useRef(0),
     pendingTools = useRef<Promise<void>>(Promise.resolve());
   useEffect(() => {
@@ -37,6 +39,7 @@ export function useRealtime(turi: TuriController) {
     }
     resources.current = {};
     liveIds.current.clear();
+    visualTurn.current = undefined;
   }, []);
   const stop = useCallback(() => {
     cleanup();
@@ -141,7 +144,10 @@ export function useRealtime(turi: TuriController) {
         }
         const type = String(data.type),
           itemId = String(data.item_id || data.response_id || "voice");
-        if (type === "input_audio_buffer.speech_started") setPhase("listening");
+        if (type === "input_audio_buffer.speech_started") {
+          visualTurn.current = undefined;
+          setPhase("listening");
+        }
         if (
           type === "response.output_audio_transcript.delta" ||
           type === "response.output_text.delta"
@@ -195,21 +201,18 @@ export function useRealtime(turi: TuriController) {
                   args: JSON.parse(call.arguments),
                   state: current.current.state,
                 });
-                result.events.forEach((e) => {
-                  if (e.type === "source")
+                if (attempt !== generation.current) return;
+                if (result.events.some((e) => e.type === "source" || e.type === "travel_options")) {
+                  if (!visualTurn.current) {
+                    const id = crypto.randomUUID();
+                    visualTurn.current = id;
                     current.current.setMessages((list) => [
                       ...list,
-                      {
-                        id: crypto.randomUUID(),
-                        role: "assistant",
-                        text: "Fuente consultada",
-                        sources: [
-                          { title: String(e.title), url: String(e.url) },
-                        ],
-                      },
+                      { id, role: "assistant", text: "" },
                     ]);
-                  else current.current.handleEvent(e);
-                });
+                  }
+                }
+                result.events.forEach((e) => current.current.handleEvent(e, visualTurn.current));
                 sendEvent({
                   type: "conversation.item.create",
                   item: {
@@ -219,6 +222,7 @@ export function useRealtime(turi: TuriController) {
                   },
                 });
               } catch (e) {
+                if (attempt !== generation.current) return;
                 sendEvent({
                   type: "conversation.item.create",
                   item: {
@@ -246,7 +250,7 @@ export function useRealtime(turi: TuriController) {
         // Carry the actual chat into the voice session, without re-playing audio.
         current.current.messages
           .slice(-12)
-          .filter((m) => m.text)
+          .filter((m) => m.text || m.options?.length)
           .forEach((message) =>
             sendEvent({
               type: "conversation.item.create",
@@ -256,7 +260,7 @@ export function useRealtime(turi: TuriController) {
                 content: [
                   {
                     type: message.role === "user" ? "input_text" : "output_text",
-                    text: message.text,
+                    text: [message.text, ...(message.options || []).map(optionToText)].filter(Boolean).join("\n\n"),
                   },
                 ],
               },
@@ -348,6 +352,7 @@ export function useRealtime(turi: TuriController) {
   };
   const sendText = (text: string) => {
     if (resources.current.channel?.readyState !== "open") return false;
+    visualTurn.current = undefined;
     sendEvent({
       type: "conversation.item.create",
       item: {

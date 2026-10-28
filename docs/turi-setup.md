@@ -5,6 +5,8 @@ La burbuja de la landing abre una conversación real preparada para OpenAI. No h
 ## Qué está implementado
 
 - Chat de texto por streaming con Responses, búsqueda web con fuentes y llamadas a herramientas.
+- Recomendaciones dentro de la respuesta con tarjetas de hoteles, restaurantes, actividades, playas y lugares: foto publicada en la fuente, zona, servicios, pros/contras y condiciones por confirmar. Una tarifa requiere evidencia del importe publicado; el presupuesto del viajero no se muestra como precio. Las fotos se obtienen de metadatos de páginas públicas con tiempo/tamaño acotados y validación de red; si la fuente bloquea la carga o no tiene foto utilizable, se informa y se conserva el enlace. Nunca se reemplaza por una foto genérica.
+- Flujo de previa: datos faltantes de a uno, fechas/noches, ocupación/edades de menores, presupuesto por noche/estadía y alcance del gasto; recomendaciones adaptadas, checklist y propuestas revisables. No se reutilizan precios, promociones ni comercios ficticios de los prototipos.
 - Voz speech-to-speech con OpenAI Realtime y WebRTC. Audio directo entre navegador y OpenAI; el servidor negocia SDP y conserva la API key. Detección semántica de turnos, interrupciones, transcripción, mute y cierre de pistas al terminar. La sesión de la interfaz se cierra a los 10 minutos.
 - Imágenes JPEG/PNG/WebP y PDF. Hasta 3 archivos, 2,5 MB combinados. Validación de tamaño y firma del archivo. No se guardan los archivos en localStorage ni en Redis; sólo el texto de la conversación y los nombres para el historial local. La política del proveedor sigue aplicándose al procesamiento de los archivos.
 - Contexto de viaje, fechas, zona horaria, viajeros, preferencias, presupuesto total/diario/por categoría y reserva organizativa para la vuelta.
@@ -16,7 +18,7 @@ La burbuja de la landing abre una conversación real preparada para OpenAI. No h
 ## Activar chat y voz
 
 1. En Vercel → belurismo → Settings → Environment Variables, agregar `OPENAI_API_KEY` para Production y Preview.
-2. La clave debe permitir `gpt-realtime-2.1` y el modelo de texto. Opcionalmente cambiar `OPENAI_REALTIME_MODEL` o `OPENAI_CHAT_MODEL`. Predeterminado para texto: `gpt-4.1-mini`.
+2. La clave debe permitir `gpt-realtime-2.1`, el modelo de texto y el de búsqueda. Opcionalmente cambiar `OPENAI_REALTIME_MODEL`, `OPENAI_CHAT_MODEL` o `OPENAI_SEARCH_MODEL`. Predeterminados: texto `gpt-4.1-mini`, búsqueda con fuentes `gpt-5.4-mini` (razonamiento bajo). La búsqueda usa la misma API key y tiene consumo adicional de modelo y búsqueda web.
 3. Redeploy para aplicar las variables. Para desarrollo, agregar la clave en `.env.local` y reiniciar el servidor.
 4. Probar desde HTTPS, habilitar micrófono y conversar/interrumpir/mutear/cerrar. La API key no llega al navegador. No se usa una cadena de grabación → transcripción → chat → síntesis para la llamada.
 
