@@ -3,7 +3,7 @@ import type { ResponseInput, Tool } from "openai/resources/responses/responses";
 import { z } from "zod";
 import { AppError, required } from "./security";
 import { beloTools, callBelo } from "./belo";
-import { createCards, listCards } from "./belo-cards";
+import { createCards, listCards, matchCards, setCardFrozen } from "./belo-cards";
 import { beloTravelHotelUrl, beloTravelSearchUrl, findBeloTravelDestination } from "./belo-travel";
 import {
   budgetSummary,
@@ -241,8 +241,24 @@ const functions = [
   {
     name: "belo_list_cards",
     description:
-      "Lista las tarjetas de la organización en belo con titular, últimos 4 dígitos, estado y el tope registrado por Turi.",
-    parameters: { type: "object", properties: {}, additionalProperties: false },
+      "Lista las tarjetas de la organización en belo con titular, últimos 4 dígitos, estado y el tope registrado por Turi. status filtra: active (activas), frozen (congeladas) o null para todas.",
+    parameters: {
+      type: "object",
+      properties: { status: { type: ["string", "null"], enum: ["active", "frozen", null] } },
+      required: ["status"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "belo_freeze_card",
+    description:
+      "Congela (frozen=true) o descongela (frozen=false) una tarjeta de la organización. query es el titular (por ejemplo kenny) o los últimos 4 dígitos. Congelar es reversible y no mueve plata: hacelo directo cuando el usuario lo pida. Si devuelve ambiguous, preguntá cuál de las opciones es; nunca elijas vos.",
+    parameters: {
+      type: "object",
+      properties: { query: { type: "string" }, frozen: { type: "boolean" } },
+      required: ["query", "frozen"],
+      additionalProperties: false,
+    },
   },
   {
     name: "belo_available_tools",
@@ -477,10 +493,26 @@ export async function executeTool(
     };
   }
   if (name === "belo_list_cards") {
-    const cards = await listCards();
+    const { status } = z.object({ status: z.enum(["active", "frozen"]).nullable().default(null) }).parse(args);
+    const cards = (await listCards()).filter((card) => !status || card.status === status);
+    if (!cards.length) return { cards, note: status ? `No hay tarjetas con estado ${status}.` : "La organización no tiene tarjetas." };
     if (cards.length) emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "cards", cards: cards.slice(0, 20).map((c) => ({
       holder: (c.holder || "Sin titular").slice(0, 60), lastFour: c.lastFour, status: c.status, limitUsd: c.limitUsd })) } });
     return { cards };
+  }
+  if (name === "belo_freeze_card") {
+    const input = z.object({ query: z.string().trim().min(1).max(60), frozen: z.boolean() }).parse(args);
+    const matches = matchCards(await listCards(), input.query);
+    if (!matches.length) return { error: `No encontré una tarjeta de "${input.query}". Listá las tarjetas y preguntá cuál es.` };
+    if (matches.length > 1)
+      return { ambiguous: matches.map((c) => ({ holder: c.holder, lastFour: c.lastFour, status: c.status })), note: "Hay más de una: preguntá cuál por los últimos 4 dígitos." };
+    const [card] = matches;
+    if (card.status === (input.frozen ? "frozen" : "active")) return { card, note: `La tarjeta ya estaba ${input.frozen ? "congelada" : "activa"}.` };
+    if (!card.canFreeze) return { error: "belo no permite cambiar el estado de esta tarjeta en este momento." };
+    const updated = await setCardFrozen(card.id, input.frozen);
+    emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "cards", cards: [{
+      holder: (card.holder || "Sin titular").slice(0, 60), lastFour: updated.lastFour, status: updated.status, limitUsd: card.limitUsd }] } });
+    return { card: { holder: card.holder, lastFour: updated.lastFour, status: updated.status }, note: "La tarjeta ya se muestra en el chat. Confirmá en una línea." };
   }
   if (name === "belo_available_tools") return beloTools(id);
   if (name === "belo_action") {
@@ -625,6 +657,10 @@ export async function runAgent(
         type: "activity",
         text: call.name === "belo_create_cards"
           ? "Emitiendo las tarjetas con belo…"
+          : call.name === "belo_list_cards"
+          ? "Consultando las tarjetas en belo…"
+          : call.name === "belo_freeze_card"
+          ? "Actualizando la tarjeta en belo…"
           : call.name === "belo_travel_hotels"
           ? "Buscando hoteles en belo travel…"
           : call.name.startsWith("belo")
