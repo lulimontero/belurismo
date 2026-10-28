@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { priceReviewResultSchema } from "./price-reviews";
+import { priceCheckResultSchema } from "./price-check";
 
 export const panelKinds = ["summary", "daily", "group", "recap", "checklist", "template", "post-trip-overview", "post-trip-notice", "leftover", "price-review", "feedback", "next-trip"] as const;
 export const planningContextSchema = z.object({
@@ -40,6 +41,7 @@ export const beloHotelWidgetSchema = z.object({
 });
 export const conversationWidgetSchema = z.discriminatedUnion("type", [
   z.object({ id: z.string().max(80), type: z.literal("price-review-result"), comparison: priceReviewResultSchema }),
+  z.object({ id: z.string().max(80), type: z.literal("price-check"), check: priceCheckResultSchema }),
   z.object({ id: z.string().max(80), type: z.literal("planning"), context: planningContextSchema }),
   z.object({ id: z.string().max(80), type: z.literal("panel"), kind: z.enum(panelKinds) }),
   z.object({ id: z.string().max(80), type: z.literal("quick-replies"), choices: z.array(z.object({ label: z.string().min(1).max(70), text: z.string().min(1).max(1500) })).max(6) }),

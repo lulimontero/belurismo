@@ -1,0 +1,40 @@
+/* In-destination price check: typical ranges, the asked price and how to order. */
+.turi-price-check { display: grid; gap: 12px; margin-top: 12px; min-width: 0; }
+.turi-price-card {
+  background: var(--turi-surface);
+  border: 1px solid var(--turi-line);
+  border-radius: 17px;
+  padding: 17px;
+  min-width: 0;
+  color: var(--turi-ink);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.turi-price-card.high { border-color: #e0828f; background: var(--turi-danger-soft); }
+.turi-price-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.turi-message-content .turi-price-card h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 16px; font-weight: 600; line-height: 1.35; color: var(--turi-ink); }
+.turi-price-ratio { border-radius: 99px; padding: 4px 10px; background: #fbdde3; color: var(--turi-danger); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.turi-price-card.above .turi-price-ratio { background: #fff1d6; color: #8a5a00; }
+.turi-price-lead { margin: 0 0 6px; color: var(--turi-muted); font-size: 12.5px; }
+.turi-price-lead strong { color: var(--turi-ink); font-weight: 600; }
+.turi-price-card ul { list-style: none; margin: 0; padding: 0; }
+.turi-price-card li { padding: 9px 0; }
+.turi-price-card li + li { border-top: 1px solid var(--turi-line); }
+.turi-price-card.high li + li { border-top-color: #f5d3da; }
+.turi-price-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.turi-price-row strong { font-weight: 650; white-space: nowrap; }
+.turi-price-card li small, .turi-price-card > small { display: block; color: var(--turi-muted); font-size: 11.5px; }
+.turi-price-bar { position: relative; height: 8px; margin: 10px 0 2px; border-radius: 99px; background: rgb(23 19 31 / 7%); }
+.turi-price-band { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: #a8dcc0; }
+.turi-price-marker { position: absolute; top: -5px; width: 3px; height: 18px; margin-left: -1.5px; border-radius: 2px; background: #d0454c; }
+.turi-price-card.ok .turi-price-marker { background: var(--turi-violet); }
+.turi-price-card footer { margin-top: 10px; color: var(--turi-muted); font-size: 11px; line-height: 1.6; }
+.turi-price-card footer a { color: var(--turi-violet); }
+.turi-price-phrase { margin: 4px 0 2px; font-size: 15px; }
+.turi-price-translation { margin-top: 2px; font-style: italic; }
+@media (max-width: 560px) {
+  .turi-price-card { padding: 14px; }
+  .turi-price-row { font-size: 12px; gap: 10px; }
+}

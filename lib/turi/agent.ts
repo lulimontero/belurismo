@@ -26,6 +26,7 @@ import { panelKinds, planningContextSchema } from "./conversation-widgets";
 import { replyWithReferenceFlow } from "./conversation-flow";
 import { buildPriceReview } from "./price-reviews";
 import { backedPriceReviewInput, createSearchSourceProofs, priceReviewToolInputSchema } from "./price-review-sources";
+import { buildPriceCheck, priceCheckInputSchema, priceCheckRatio } from "./price-check";
 
 export const openaiClient = () =>
   new OpenAI({
@@ -99,6 +100,11 @@ const functions = [
     name: "present_price_review",
     description: "Muestra una ficha de comparación de un gasto registrado: pagado, rango documentado, unidad/cantidad, diferencia y fuente/fecha. Primero buscá referencias reales con search_travel. No inventes rangos típicos, equivalencias ni sobreprecios. expenseId identifica el comprobante; currency debe coincidir con su moneda. Usá sourceProof de search_travel.sourceProofs para la misma URL y copiá evidence literalmente de ese resultado (podés seleccionar un fragmento). El servidor exige ambos importes junto a su moneda en esa evidencia firmada; no alcanza una paráfrasis libre ni una URL inventada. Sin proof vigente, buscá de nuevo o preguntá. Nunca leas ni muestres el proof al usuario. quantity sólo con cantidad confirmada del comprobante; si falta, preguntá. conditions explica si zona, fecha, producto, tarifa, impuestos y cantidad son comparables o qué límites hay. Una diferencia de precio no demuestra cobro indebido. Si faltan fuentes/precios comparables, explicalo sin llamar esta herramienta.",
     parameters: z.toJSONSchema(priceReviewToolInputSchema, { override: ({ jsonSchema }) => { if (jsonSchema.format === "uri") delete jsonSchema.format; } }),
+  },
+  {
+    name: "show_price_check",
+    description: "Muestra en el chat una ficha visual de cuánto suele costar algo en destino (ej. una caipirinha, un taxi, un almuerzo), con un rango por tipo de lugar (references: label como \"Quiosque de playa\", \"Bar / centro\", \"Restaurante\"; min y max en currency, la moneda local). Si el usuario dice cuánto le piden, pasalo en asked con su moneda confirmada: la ficha lo convierte con la cotización del día, marca una línea roja y calcula cuántas veces supera el máximo típico. homeCurrency es la moneda del viajero (ej. ARS) para mostrar el equivalente; null si no hace falta. Si pregunta cómo pedirlo, completá phrase con el texto en el idioma local, pronunciación aproximada para hispanohablantes y traducción. Buscá primero referencias actuales con search_travel y pasá sourceTitle/sourceUrl de la página consultada; si no encontrás una fuente, null y la ficha lo aclara como referencia orientativa. Un precio alto no demuestra estafa.",
+    parameters: z.toJSONSchema(priceCheckInputSchema),
   },
   {
     name: "show_planning_step",
@@ -252,7 +258,7 @@ export const realtimeTools = functions.map((tool) => ({
 export const responseTools: Tool[] = functions.map((tool) => ({
   type: "function",
   ...tool,
-  strict: tool.name === "present_travel_options" || tool.name === "present_price_review",
+  strict: tool.name === "present_travel_options" || tool.name === "present_price_review" || tool.name === "show_price_check",
 }));
 export type Emit = (event: { type: string; [key: string]: unknown }) => void;
 export async function connectionsFor(id: string) {
@@ -283,6 +289,15 @@ export async function executeTool(
       return { status: "shown_in_chat", comparison, note: "La ficha ya se mostró. No declares estafa ni operación confirmada. Resumí los límites y ofrecé revisar el comprobante." };
     } catch (error) {
       return { error: (error as Error).message, recoverable: true, shown: false, note: "No se mostró una ficha. Buscá de nuevo con search_travel y copiá el sourceProof y la evidencia literal de esa fuente; si faltan precios comparables, explicá qué dato falta o preguntá, sin inventar rangos." };
+    }
+  }
+  if (name === "show_price_check") {
+    try {
+      const check = await buildPriceCheck(args, (from, to) => exchangeQuote({ from, to, amount: 1 }));
+      emit({ type: "widget", widget: { id: crypto.randomUUID(), type: "price-check", check } });
+      return { status: "shown_in_chat", check, ratioToTypicalMax: priceCheckRatio(check), note: "La ficha ya se mostró con rangos, conversión y frase. Respondé en una o dos frases (por ejemplo, el equivalente en la moneda local y si conviene esperar antes de pagar) sin repetir la ficha. Recomendá pedir la carta o el precio por escrito y verificar el destinatario del PIX; no declares estafa sólo por el precio." };
+    } catch (error) {
+      return { error: (error as Error).message, shown: false };
     }
   }
   if (name === "show_planning_step") {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseIncoming, toWhatsappText } from "../lib/turi/whatsapp";
+import { isAllowed, parseIncoming, toWhatsappText } from "../lib/turi/whatsapp";
 
 const key = (extra = {}) => ({ id: "ABC", remoteJid: "5493810000000@s.whatsapp.net", fromMe: false, ...extra });
 
@@ -30,4 +30,11 @@ test("parseIncoming prefers the phone JID over a LID", () => {
 test("toWhatsappText converts markdown", () => {
   assert.equal(toWhatsappText("**Hotel** en [Booking](https://b.com/x)"), "*Hotel* en Booking: https://b.com/x");
   assert.equal(toWhatsappText("## Día 1"), "*Día 1*");
+});
+
+test("isAllowed filters by phone when a list is set", () => {
+  assert.equal(isAllowed("5491126883748@s.whatsapp.net", "+54 9 11 2688-3748"), true);
+  assert.equal(isAllowed("5493810000000@s.whatsapp.net", "5491126883748"), false);
+  assert.equal(isAllowed("999@lid", "5491126883748"), false);
+  assert.equal(isAllowed("5493810000000@s.whatsapp.net", ""), true);
 });
