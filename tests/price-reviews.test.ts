@@ -125,6 +125,60 @@ test("search URL lists, fabricated citations, malformed spans and mixed-source p
   mixedMessage.content[0].annotations.push({ ...mixedMessage.content[0].annotations[0], url: "https://another.example/price" });
   assert.deepEqual(createSearchSourceProofs("test", mixed, NOW), []);
 });
+test("completed open_page with an explicit matching HTTPS URL authorizes only its cited price evidence", async () => {
+  const evidence = "Entrada inteira R$40 por adulto.";
+  const output = [
+    { type: "web_search_call", status: "completed", action: { type: "open_page", url: input.sourceUrl } },
+    ...searchOutput(evidence).slice(1),
+  ];
+  const sources = createSearchSourceProofs("test", output);
+  assert.equal(sources.length, 1);
+  assert.equal(sources[0].sourceUrl, input.sourceUrl);
+  assert.equal(sources[0].evidence, evidence);
+  const state = workspace();
+  state.expenses[0] = { ...state.expenses[0], description: "Entrada QA", amount: 180, homeAmount: 180 };
+  const events: Record<string, unknown>[] = [];
+  const result = await executeTool("test", "present_price_review", {
+    ...input, referenceMin: 40, referenceMax: 40, quantity: 3, unit: "entrada adulta",
+    evidence, sourceProof: sources[0].sourceProof,
+  }, state, event => events.push(event));
+  assert.equal((result as { status: string }).status, "shown_in_chat");
+  const widget = readConversationWidget(events[0].widget);
+  assert.equal(widget?.type, "price-review-result");
+  if (widget?.type === "price-review-result") {
+    assert.equal(widget.comparison.referenceTotalMin, 120);
+    assert.equal(widget.comparison.referenceTotalMax, 120);
+    assert.equal(widget.comparison.paid, 180);
+  }
+  assert.doesNotMatch(JSON.stringify(events), /sourceProof/);
+});
+
+test("open_page never falls back to a citation alone, a reference ID or another page URL", () => {
+  const source = { type: "url", url: input.sourceUrl };
+  const invalidActions = [
+    undefined,
+    { type: "open_page", url: "https://example.com/another-page" },
+    { type: "open_page", url: input.sourceUrl + "?utm_source=different" },
+    { type: "open_page", ref_id: "turn0search0" },
+    { type: "open_page", url: "turn0search0" },
+    { type: "open_page", url: "http://example.com/carta" },
+    { type: "open_page", url: null },
+    { type: "open_page", sources: [source] },
+    { type: "open_page", url: "https://example.com/another-page", sources: [source] },
+  ];
+  for (const action of invalidActions) {
+    const output = [{ type: "web_search_call", status: "completed", action }, ...searchOutput().slice(1)];
+    assert.deepEqual(createSearchSourceProofs("test", output, NOW), [], "opening metadata must independently establish the exact cited URL");
+  }
+  for (const status of [undefined, "in_progress", "failed", "incomplete"]) {
+    const output = [{ type: "web_search_call", status, action: { type: "open_page", url: input.sourceUrl } }, ...searchOutput().slice(1)];
+    assert.deepEqual(createSearchSourceProofs("test", output, NOW), []);
+  }
+  const malformed = searchOutput();
+  (malformed[1] as { content: { annotations: { end_index: number }[] }[] }).content[0].annotations[0].end_index = 99999;
+  assert.deepEqual(createSearchSourceProofs("test", [{ type: "web_search_call", status: "completed", action: { type: "open_page", url: input.sourceUrl } }, ...malformed.slice(1)], NOW), []);
+});
+
 test("separate paragraphs cannot lend another source's monetary amounts to a comparison", () => {
   const first = "Entrada R$ 40. [1]", second = "Bebida R$ 10 a R$ 18. [2]";
   const output = [

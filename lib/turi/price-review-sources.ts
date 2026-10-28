@@ -51,24 +51,32 @@ const outputTextSchema = z.object({ type: z.literal("output_text"), text: z.stri
 const messageSchema = z.object({ type: z.literal("message"), content: z.array(z.unknown()).max(20) });
 const searchSchema = z.object({
   type: z.literal("web_search_call"), status: z.literal("completed"),
-  action: z.object({ sources: z.array(z.object({ type: z.literal("url"), url: z.string() })).max(200) }),
+  action: z.object({ type: z.literal("search").optional(), sources: z.array(z.object({ type: z.literal("url"), url: z.string() })).max(200) }),
+});
+
+const openPageSchema = z.object({
+  type: z.literal("web_search_call"), status: z.literal("completed"),
+  action: z.object({ type: z.literal("open_page"), url: z.string().max(2000) }),
 });
 
 /** Mint only from provider output received by search_travel, not from tool args.
- * A paragraph must have one cited URL also present in actual web-search sources.
+ * A paragraph must cite one URL returned in search sources or explicitly opened.
+ * Open-page actions require the exact HTTPS URL in the citation, never a ref ID.
  * URL lists, uncited text and paragraphs mixing sources cannot authorize a card.
  */
 export function createSearchSourceProofs(sessionId: string, output: readonly unknown[], now = Date.now()): SearchSourceProof[] {
   const consulted = new Set<string>();
+  const opened = new Set<string>();
   for (const item of output.slice(0, 80)) {
     const search = searchSchema.safeParse(item);
-    if (!search.success) continue;
-    for (const source of search.data.action.sources) {
+    if (search.success) for (const source of search.data.action.sources) {
       const identity = sourceIdentity(source.url);
       if (identity) consulted.add(identity);
     }
+    const page = openPageSchema.safeParse(item);
+    if (page.success && sourceIdentity(page.data.action.url)) opened.add(page.data.action.url);
   }
-  if (!consulted.size) return [];
+  if (!consulted.size && !opened.size) return [];
   const proofs: SearchSourceProof[] = [];
   const seen = new Set<string>();
   for (const item of output.slice(0, 80)) {
@@ -89,7 +97,7 @@ export function createSearchSourceProofs(sessionId: string, output: readonly unk
       }
       if (malformed) continue;
       for (const citation of citations) {
-        if (!consulted.has(citation.identity)) continue;
+        if (!consulted.has(citation.identity) && !opened.has(citation.url)) continue;
         const paragraphStart = text.lastIndexOf("\n\n", citation.start_index);
         const start = paragraphStart < 0 ? 0 : paragraphStart + 2;
         const paragraphEnd = text.indexOf("\n\n", citation.end_index);
