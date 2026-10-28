@@ -88,6 +88,11 @@ test("fechas sin año toman la próxima ocurrencia y se confirman en el selector
   assert.deepEqual(range("entre el 2 y el 7 de diciembre"), { startDate: "2026-12-02", endDate: "2026-12-07", nights: 5 });
   assert.deepEqual(range("2/12 al 7/12"), { startDate: "2026-12-02", endDate: "2026-12-07", nights: 5 });
   assert.equal(parseHotelRequest("del 2 de diciembre al 4 adultos", today).nights, undefined);
+  assert.deepEqual(range("me quiero ir a san pablo del 2 al 7 de dic"), { startDate: "2026-12-02", endDate: "2026-12-07", nights: 5 });
+  assert.deepEqual(range("del 28 de dic. al 3 de ene"), { startDate: "2026-12-28", endDate: "2027-01-03", nights: 6 });
+  assert.deepEqual(range("del 10 al 15 de setiembre"), { startDate: "2027-09-10", endDate: "2027-09-15", nights: 5 });
+  assert.equal(parseHotelRequest("del 2 al 7 de dic de 2026", today).nights, 5);
+  assert.equal(parseHotelRequest("del 2 al 7 de diciembre", today).yearInferred, true);
   const inferred = planningStepFor(users("hola me quiero ir a san pablo del 2 de diciembre al 7"), emptyWorkspace(), today);
   assert.equal(inferred?.step, "dates");
   assert.equal(inferred?.startDate, "2026-12-02");

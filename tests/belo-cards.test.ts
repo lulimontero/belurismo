@@ -62,3 +62,9 @@ test("belo travel: arma la URL de búsqueda con el formato del sitio y el widget
   assert.equal(readConversationWidget({ ...widget, hotels: [{ ...hotel, url: "https://www.booking.com/hotel/x" }] }), undefined);
   assert.equal(findBeloTravelDestination("Bariloche"), undefined);
 });
+
+test("hoteles web sólo como respaldo: se descartan si el destino está en belo travel", async () => {
+  const { findBeloTravelDestination } = await import("../lib/turi/belo-travel");
+  assert.ok(findBeloTravelDestination("Florianópolis, Santa Catarina Hotel Majestic"));
+  assert.equal(findBeloTravelDestination("Bariloche, Río Negro Llao Llao"), undefined);
+});
