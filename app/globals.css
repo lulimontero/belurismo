@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --color-fog: #fafafa;
+  --color-ash: #999999;
+  --color-violet: #5300da;
+  --color-mint: #00ffb2;
+}
+
+html {
+  background: #fafafa;
+}
+
+body {
+  background: #fafafa;
+  color: #000;
+  font-family: var(--font-sans);
+  font-feature-settings: "cv01", "cv05", "cv09", "cv11", "ss03";
+  /* static Inter = opsz 14; Framer's "Inter Variable" roles opt into 20/24/32 below */
+  font-variation-settings: "opsz" 14;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.o32 {
+  font-variation-settings: "opsz" 32;
+}
+.o24 {
+  font-variation-settings: "opsz" 24;
+}
+.no-cv11 {
+  font-feature-settings: "cv01", "cv05", "cv09", "ss03";
+}
+
+/* Section headings: 700, tracking -0.04em, line-height 1 (site DNA §1.2) */
+.h-display {
+  font-variation-settings: "opsz" 32;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 40px;
+  border-radius: 100px;
+  background: #000;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  font-variation-settings: "opsz" 20;
+  font-feature-settings: "cv01", "cv05", "cv09", "cv11";
+  transition: opacity 0.2s;
+}
+.pill:hover {
+  opacity: 0.85;
+}
