@@ -154,7 +154,17 @@ function Templates({ turi, disabled }: Props) {
   const choices = state.assistantPreferences.checklist;
   const templates = state.postTrip.templates;
   const selected = templates.find(template => template.id === selectedId);
-  const options = [...new Map(turi.messages.flatMap(message => message.options || []).map(option => [option.id, option])).values()];
+  // Templates keep place references, never the quoted prices or payment details.
+  // Belo hotel IDs stay stable when the same hotel appears in several searches.
+  const options = [...new Map(turi.messages.flatMap(message => [
+    ...(message.options || []).map(({ id, name, kind, location, summary, sourceUrl }) => ({ id, name, kind, location, summary, sourceUrl })),
+    ...(message.widgets || []).flatMap(widget => widget.type === "belo-hotels"
+      ? widget.hotels.map(hotel => ({
+        id: `belo-hotel:${hotel.id}`, name: hotel.name, kind: "hotel" as const, location: hotel.address,
+        summary: "Hotel consultado en Belo Travel. Tarifas y disponibilidad a confirmar para un nuevo viaje.",
+        sourceUrl: hotel.url,
+      })) : []),
+  ]).map(option => [option.id, option])).values()];
   const includeItinerary = state.itinerary.length > 0 && !!choices["template:itinerary"];
   const includeCategories = Object.values(state.trip.categoryBudgets).some(value => value !== undefined && value > 0) && !!choices["template:category-budgets"];
   const membersPermitted = state.members.length > 0 && state.members.every(member => member.adultConfirmed && member.consentConfirmed);
